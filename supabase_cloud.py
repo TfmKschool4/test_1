@@ -139,11 +139,7 @@ def go_to_page(page_name):
 def page_home():
     st.markdown("<h1 style='text-align: center;'>Credit Scoring Risk</h1>", unsafe_allow_html=True)
     
-    # 
-
-[Image of credit scoring logo]
- - Placeholder visual
-    # Puedes cambiar la URL por una imagen local o tu propio logo alojado
+    # He eliminado la línea que causaba error y dejado solo el código que muestra la imagen
     st.markdown(
         """
         <div style="display: flex; justify_content: center; margin-bottom: 30px;">
@@ -167,7 +163,7 @@ def page_home():
             if st.button("💳 Solicitar Crédito", use_container_width=True):
                 go_to_page("request")
                 st.rerun()
-
+                
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
     
