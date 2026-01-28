@@ -5,7 +5,7 @@ import pickle
 import os
 
 with open('model_final.pkl', 'rb') as file:
-    model_final = pickle.load(file)
+    model_final = pickle.load(file)
 
 from supabase import create_client
 
@@ -291,7 +291,7 @@ def main():
             'HOUSING_TYPE_Office_apartment',
             'HOUSING_TYPE_Rented_apartment',
             'HOUSING_TYPE_With_parents'
-            ]
+            ]
 
             datos_completos = datos_completos[columnas]
             st.dataframe(datos_completos)
