@@ -8,7 +8,7 @@ from supabase import create_client
 # =========================
 # CARGA DEL MODELO
 # =========================
-with open("model_-final.pk", "rb") as file:   # ⚠️ revisa el nombre si falla
+with open("model_final.pk", "rb") as file:   # ⚠️ revisa el nombre si falla
     model_final = pickle.load(file)
 
 # =========================
