@@ -155,6 +155,9 @@ def main():
 
     # Casa propia
     FLAG_OWN_REALTY = st.checkbox('¿El cliente posee casa propia?')
+    
+    # Carro propio
+    FLAG_OWN_CAR = st.checkbox('¿El cliente posee carro propio?')
 
     # Teléfono
     FLAG_PHONE = st.checkbox('¿Ha proporcionado su número de teléfono?')
@@ -232,6 +235,7 @@ def main():
                     'INCOME_TYPE_Pensionista': int(INCOME_TYPE_Pensionista),
                     'YEARS_ACTUAL_WORK': np.nan if YEARS_ACTUAL_WORK == '' else float(YEARS_ACTUAL_WORK),
                     'FLAG_OWN_REALTY': int(FLAG_OWN_REALTY),
+                    'FLAG_OWN_CAR': int(FLAG_OWN_CAR),
                     'FLAG_PHONE': int(FLAG_PHONE),
                     'FLAG_DNI': int(FLAG_DNI),
                     'FLAG_PASAPORTE': int(FLAG_PASAPORTE),
