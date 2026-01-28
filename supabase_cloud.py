@@ -17,7 +17,7 @@ supabase = create_client(url, key)
 datos_internos = pd.read_csv('datos_internos.csv', index_col=0)
 
 def main():
-    st.title('Formulario del préstamo')
+            st.title('Formulario del préstamo')
     
     # ID del cliente
     SK_ID_CURR = st.text_input('ID del solicitante')
