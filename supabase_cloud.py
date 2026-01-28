@@ -351,15 +351,25 @@ def page_credit_request():
             "OWN_CAR": st.column_config.CheckboxColumn("Coche Propio"),
             # Simplificamos algunos flags documentales para que la tabla no sea kilométrica, 
             # asumiendo True por defecto o añadiendo solo los críticos. Añade más si es necesario.
-            "FLAG_DOCS_OK": st.column_config.CheckboxColumn("Documentación Completa (DNI, etc.)")
+            "FLAG_PHONE": st.column_config.CheckboxColumn("Teléfono"),
+            "FLAG_DNI": st.column_config.CheckboxColumn("DNI"),
+            "FLAG_PASAPORTE": st.column_config.CheckboxColumn("Pasaporte"),
+            "FLAG_CERTIFICADO_LABORAL": st.column_config.CheckboxColumn("Cert. Laboral"),
+            "FLAG_COMPROBANTE_DOM_FISCAL": st.column_config.CheckboxColumn("Comp. Domicilio"),
+            "FLAG_ESTADO_CUENTA_BANC": st.column_config.CheckboxColumn("Estado Cuenta"),
+            "FLAG_TARJETA_ID_FISCAL": st.column_config.CheckboxColumn("ID Fiscal")
+
         }
 
         # DataFrame plantilla
         df_template = pd.DataFrame(columns=[
-            "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
-            "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
-            "YEARS_WORKED", "OWN_REALTY", "OWN_CAR", "FLAG_DOCS_OK"
-        ])
+    "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
+    "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
+    "YEARS_WORKED", "OWN_REALTY", "OWN_CAR",
+    "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
+    "FLAG_CERTIFICADO_LABORAL", "FLAG_COMPROBANTE_DOM_FISCAL",
+    "FLAG_ESTADO_CUENTA_BANC", "FLAG_TARJETA_ID_FISCAL"
+    ])
 
         edited_df = st.data_editor(df_template, num_rows="dynamic", column_config=column_config, use_container_width=True)
 
@@ -379,7 +389,14 @@ def page_credit_request():
                     try:
                         # 1. Mapeos básicos
                         age_bin = pd.cut([row['AGE']], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
-                        docs_ok = 1 if row['FLAG_DOCS_OK'] else 0
+                        'FLAG_PHONE': row['FLAG_PHONE'],
+                        'FLAG_DNI': row['FLAG_DNI'],
+                        'FLAG_PASAPORTE': row['FLAG_PASAPORTE'],
+                        'FLAG_CERTIFICADO_LABORAL': row['FLAG_CERTIFICADO_LABORAL'],
+                        'FLAG_COMPROBANTE_DOM_FISCAL': row['FLAG_COMPROBANTE_DOM_FISCAL'],
+                        'FLAG_ESTADO_CUENTA_BANC': row['FLAG_ESTADO_CUENTA_BANC'],
+                        'FLAG_TARJETA_ID_FISCAL': row['FLAG_TARJETA_ID_FISCAL'],
+
                         
                         # Construir diccionario solicitante (misma lógica que individual)
                         d = {
