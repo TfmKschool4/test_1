@@ -389,6 +389,7 @@ def page_credit_request():
                     try:
                         # 1. Mapeos básicos
                         age_bin = pd.cut([row['AGE']], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
+                        raw_input = {
                         'FLAG_PHONE': row['FLAG_PHONE'],
                         'FLAG_DNI': row['FLAG_DNI'],
                         'FLAG_PASAPORTE': row['FLAG_PASAPORTE'],
@@ -396,6 +397,7 @@ def page_credit_request():
                         'FLAG_COMPROBANTE_DOM_FISCAL': row['FLAG_COMPROBANTE_DOM_FISCAL'],
                         'FLAG_ESTADO_CUENTA_BANC': row['FLAG_ESTADO_CUENTA_BANC'],
                         'FLAG_TARJETA_ID_FISCAL': row['FLAG_TARJETA_ID_FISCAL'],
+                        }
 
                         
                         # Construir diccionario solicitante (misma lógica que individual)
