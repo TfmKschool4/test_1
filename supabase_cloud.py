@@ -4,8 +4,8 @@ import numpy as np
 import pickle
 import os
 
-with open('model_final.pkl', 'rb') as file:
-    model_final = pickle.load(file)
+with open('model_-final.pk','rb') as file:
+            model_final = pickle.load(file)
 
 from supabase import create_client
 
