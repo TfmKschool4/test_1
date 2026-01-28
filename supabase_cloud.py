@@ -1,345 +1,299 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
-import os
 
-with open('model_final.pkl', 'rb') as file:
-    model_final = pickle.load(file)
+st.set_page_config(page_title="Credit Risk Scoring (Plantilla)", page_icon="💳", layout="wide")
 
-from supabase import create_client
+# -----------------------------
+# Estado para navegación
+# -----------------------------
+if "mode" not in st.session_state:
+    st.session_state.mode = None  # None | "single" | "bulk"
 
-url = os.environ['SUPABASE_URL']
-key = os.environ['SUPABASE_KEY']
-supabase = create_client(url, key)
+# -----------------------------
+# Función dummy de scoring (sin modelo real)
+# -----------------------------
+def dummy_pd_score(data: dict) -> float:
+    """
+    Devuelve una probabilidad de impago (PD) simulada en [0,1].
+    (Solo para plantilla: reemplazar por tu model_final.predict_proba)
+    """
+    income = float(data.get("AMT_INCOME_TOTAL", 0) or 0)
+    credit = float(data.get("AMT_CREDIT", 0) or 0)
+    years_work = float(data.get("YEARS_ACTUAL_WORK", 0) or 0)
 
+    ratio = credit / (income + 1e-6)
 
-datos_internos = pd.read_csv('datos_internos.csv', index_col=0)
+    # Heurística simple: ratio alto => más PD, más años trabajando => menos PD
+    pd_ = 0.15 + 0.10 * min(ratio, 10) - 0.01 * min(years_work, 30)
+    pd_ = float(np.clip(pd_, 0.01, 0.95))
+    return pd_
 
-def main():
-    st.title('Formulario del préstamo')
-    
+def pd_to_score(pd, base_score=600, pdo=50):
+    odds = (1 - pd) / pd
+    factor = pdo / np.log(2)
+    offset = base_score - factor * np.log(20)
+    return float(offset + factor * np.log(odds))
+
+# -----------------------------
+# Pantalla 0: elegir modo
+# -----------------------------
+def choose_mode():
+    st.title("Entrada de solicitudes (Plantilla)")
+    st.write("¿Vas a rellenar datos para **1 persona** o para **varias personas**?")
+
+    option = st.radio("Modo:", ["1 persona", "Varias personas"], horizontal=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Continuar", use_container_width=True):
+            st.session_state.mode = "single" if option == "1 persona" else "bulk"
+            st.rerun()
+    with col2:
+        st.info("Plantilla sin base de datos. Resultados simulados para mostrar el flujo.")
+
+# -----------------------------
+# Modo 1: formulario (basado en el tuyo)
+# -----------------------------
+def single_form():
+    st.title("Formulario del préstamo (1 persona)")
+
     # ID del cliente
-    SK_ID_CURR = st.text_input('ID del solicitante')
-    if SK_ID_CURR == '':
-        st.warning('Debes introducir un ID.')
-    else:
-        try:
-            SK_ID_CURR_int = int(SK_ID_CURR)  # Intentamos convertir a entero
-            if SK_ID_CURR_int < 0:
-                st.error('El ID debe ser un número entero positivo o 0.')
-            else:
-                st.success(f'ID del solicitante: {SK_ID_CURR_int}')
-        except ValueError:
-            st.error('El ID debe ser un número entero válido, no texto.')
+    SK_ID_CURR = st.text_input("ID del solicitante")
+    NAME = st.text_input("Nombre del solicitante")
 
-    # Nombre del cliente
-    NAME = st.text_input('Nombre del solicitante')
-    if NAME == '':
-        st.warning('Debes introducir un nombre.')
-    else:
-        if NAME.isalpha():
-            st.success(f'El solicitante es: {NAME}')
-        else:
-            st.error('Debes introducir un nombre válido.')
-
-    # Edad del cliente
-    AGES = st.slider(
-        'Edad:',
-        min_value = 18,
-        max_value = 100,
-        value = 18,
-        step = 1
-    )
+    # Edad
+    AGES = st.slider("Edad:", min_value=18, max_value=100, value=18, step=1)
     labels = [1, 2, 3, 4]
     bins = [18, 34, 43, 54, 100]
+    AGE_BINS = pd.cut([AGES], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
 
-    AGE_BINS = pd.cut([AGES], bins = bins, labels = labels, right=True, include_lowest=True).to_list()[0]
-
-    # Género del cliente
-    GENDER = st.selectbox(
-        'Género del solicitante:',
-        ['Masculino', 'Femenino']
-    )
-    GENDER_M = 1 if GENDER == 'Masculino' else 0
-    GENDER_F = 1 if GENDER == 'Femenino' else 0
-    
-    CODE_GENDER = 'M' if GENDER == 'Masculino' else 'F'
+    # Género
+    GENDER = st.selectbox("Género del solicitante:", ["Masculino", "Femenino"])
+    GENDER_M = 1 if GENDER == "Masculino" else 0
+    GENDER_F = 1 if GENDER == "Femenino" else 0
+    CODE_GENDER = "M" if GENDER == "Masculino" else "F"
 
     # Hijos
-    CNT_CHILDREN = st.selectbox(
-        'Número de hijos:',
-        ['0','1', '2', '3', '4 o más']
-    )
-    map_children = {
-        '0':0,
-        '1':1,
-        '2':2,
-        '3':3,
-        '4 o más':4
-    }
-    CNT_CHILDREN = map_children[CNT_CHILDREN]
+    CNT_CHILDREN = st.selectbox("Número de hijos:", ["0", "1", "2", "3", "4 o más"])
+    CNT_CHILDREN = {"0": 0, "1": 1, "2": 2, "3": 3, "4 o más": 4}[CNT_CHILDREN]
 
-    # Nivel de estudios
+    # Estudios
     NAME_EDUCATION_TYPE = st.selectbox(
-        'Nivel de estudios:',
-        ['Lower secondary',
-        'Secondary / secondary special', 
-        'Incomplete higher',
-        'Higher education',
-        'Academic degree']
+        "Nivel de estudios:",
+        ["Lower secondary", "Secondary / secondary special", "Incomplete higher", "Higher education", "Academic degree"],
     )
-    map_studies = {
-        'Lower secondary':0,
-        'Secondary / secondary special':1,
-        'Incomplete higher':2,
-        'Higher education':3,
-        'Academic degree':4
-    }
-    LEVEL_EDUCATION_TYPE = map_studies[NAME_EDUCATION_TYPE]
+    LEVEL_EDUCATION_TYPE = {
+        "Lower secondary": 0,
+        "Secondary / secondary special": 1,
+        "Incomplete higher": 2,
+        "Higher education": 3,
+        "Academic degree": 4,
+    }[NAME_EDUCATION_TYPE]
 
+    # Familia
     FAMILY_STATUS = st.selectbox(
-        'Situación familiar del solicitante:',
-        ['Married', 'Single / not married', 'Civil marriage', 'Separated', 'Widow']
+        "Situación familiar del solicitante:",
+        ["Married", "Single / not married", "Civil marriage", "Separated", "Widow"],
     )
-    FAMILY_STATUS_Single_or_not_married = 1 if FAMILY_STATUS == 'Single / not married' else 0
-    FAMILY_STATUS_Married = 1 if FAMILY_STATUS == 'Married' else 0
-    FAMILY_STATUS_Civil_marriage = 1 if FAMILY_STATUS == 'Civil marriage' else 0
-    FAMILY_STATUS_Separated = 1 if FAMILY_STATUS == 'Separated' else 0
-    FAMILY_STATUS_Widow = 1 if FAMILY_STATUS == 'Widow' else 0
 
+    # Vivienda
     HOUSING_TYPE = st.selectbox(
-        'Tipo de vivienda del solicitante:',
-        ['With parents', 'Rented apartment', 'House / apartment', 'Municipal apartment', 'Office apartment', 'Co-op apartment']
+        "Tipo de vivienda del solicitante:",
+        ["With parents", "Rented apartment", "House / apartment", "Municipal apartment", "Office apartment", "Co-op apartment"],
     )
-
-    HOUSING_TYPE_With_parents = 1 if HOUSING_TYPE == 'With parents' else 0
-    HOUSING_TYPE_Rented_apartment = 1 if HOUSING_TYPE == 'Rented apartment' else 0
-    HOUSING_TYPE_House_or_apartment = 1 if HOUSING_TYPE == 'House / apartment' else 0
-    HOUSING_TYPE_Municipal_apartment = 1 if HOUSING_TYPE == 'Municipal apartment' else 0
-    HOUSING_TYPE_Office_apartment = 1 if HOUSING_TYPE == 'Office apartment' else 0
-    HOUSING_TYPE_Co_op_apartment = 1 if HOUSING_TYPE == 'Co-op apartment' else 0
 
     # Ingresos
-    AMT_INCOME_TOTAL = st.number_input(
-        'Ingresos del solicitante:',
-        min_value = 0.00,
-        value = 0.00,
-        step = 100.00
-        )
+    AMT_INCOME_TOTAL = st.number_input("Ingresos del solicitante:", min_value=0.00, value=0.00, step=100.00)
 
     # Fuente de ingresos
     INCOME_TYPE = st.selectbox(
-        'Indica la fuente de ingresos del solitante:',
-        ['Working', 'State servant', 'Commercial associate', 'Businessman', 'Maternity leave', 'Student', 'Unemployed', 'Pensioner']
+        "Indica la fuente de ingresos del solicitante:",
+        ["Working", "State servant", "Commercial associate", "Businessman", "Maternity leave", "Student", "Unemployed", "Pensioner"],
     )
-    INCOME_TYPE_Alta_Estabilidad = 1 if INCOME_TYPE == 'Working' or INCOME_TYPE == 'State servant' else 0
-    INCOME_TYPE_Media_Estabilidad = 1 if INCOME_TYPE == 'Commercial associate' or INCOME_TYPE == 'Businessman' else 0
-    INCOME_TYPE_Baja_Estabilidad = 1 if INCOME_TYPE == 'Maternity leave' or INCOME_TYPE == 'Student' or INCOME_TYPE == 'Unemployed' else 0
-    INCOME_TYPE_Pensionista = 1 if INCOME_TYPE == 'Pensioner' else 0
 
     # Años en su trabajo actual
-    YEARS_ACTUAL_WORK = st.text_input('Años en su actual puesto de trabajo:')
-    if YEARS_ACTUAL_WORK == '':
-        st.warning('Dejar el campo vacío implica que el solicitante es desempleado o jubilado.')
-        # YEARS_ACTUAL_WORK = np.nan
-    else:
-        try:
-            YEARS_ACTUAL_WORK = float(YEARS_ACTUAL_WORK)
-            if YEARS_ACTUAL_WORK < 0:
-                st.error('Debes escribir un número positivo.')
-            else:
-                pass
-        except ValueError:
-            st.error('Debes escribir un número entero positivo, no texto.')
+    YEARS_ACTUAL_WORK = st.text_input("Años en su actual puesto de trabajo (vacío si no aplica):")
 
-    # Casa propia
-    FLAG_OWN_REALTY = st.checkbox('¿El cliente posee casa propia?')
-    
-    # Carro propio
-    FLAG_OWN_CAR = st.checkbox('¿El cliente posee carro propio?')
+    # Flags
+    FLAG_OWN_REALTY = st.checkbox("¿El cliente posee casa propia?")
+    FLAG_PHONE = st.checkbox("¿Ha proporcionado su número de teléfono?")
+    FLAG_DNI = st.checkbox("¿Ha entregado el DNI?")
+    FLAG_PASAPORTE = st.checkbox("¿Ha entregado el pasaporte?")
+    FLAG_COMPROBANTE_DOM_FISCAL = st.checkbox("¿Ha entregado su comprobante de domicilio fiscal?")
+    FLAG_ESTADO_CUENTA_BANC = st.checkbox("¿Ha entregado el estado de su cuenta bancaria?")
+    FLAG_TARJETA_ID_FISCAL = st.checkbox("¿Ha entregado su tarjeta de identificación fiscal?")
+    FLAG_CERTIFICADO_LABORAL = st.checkbox("¿Ha entregado su certificado laboral?")
 
-    # Teléfono
-    FLAG_PHONE = st.checkbox('¿Ha proporcionado su número de teléfono?')
+    # Crédito solicitado
+    AMT_CREDIT = st.number_input("Crédito solicitado:", min_value=0.0, value=0.0, step=100.0)
 
-    # DNI
-    FLAG_DNI = st.checkbox('¿Ha entregado el DNI?')
+    st.divider()
 
-    # Pasaporte
-    FLAG_PASAPORTE = st.checkbox('¿Ha entregado el pasaporte?')
-
-    # Comprobante de domicilio fiscal
-    FLAG_COMPROBANTE_DOM_FISCAL = st.checkbox('¿Ha entregado su comprobante de domicilio fiscal?')
-
-    # Comprobante del estado de la cuenta bancaria
-    FLAG_ESTADO_CUENTA_BANC = st.checkbox('¿Ha entregado el estado de su cuenta bancaria?')
-
-    # Tarjeta de Identificación Fiscal
-    FLAG_TARJETA_ID_FISCAL = st.checkbox('¿Ha entregado su tarjeta de identificación fiscal?')
-
-    # Certificado laboral
-    FLAG_CERTIFICADO_LABORAL = st.checkbox('¿Ha entregado su certificado laboral?')
-
-    # Importe del crédito
-    AMT_CREDIT = st.number_input(
-        'Crédito solicitado:',
-        min_value = 0.0,
-        value = 0.0,
-        step = 100.0
-    )
-
-    if st.button('Guardar datos'):
-        # Ver si hay errores:
+    if st.button("Procesar (simulado)", use_container_width=True):
+        # Validaciones básicas solo al pulsar
         errors = []
-        
-        #Error del ID. 
         try:
-            SK_ID_CURR_int = int(SK_ID_CURR)
-            if SK_ID_CURR_int < 0:
-                errors.append('El ID del cliente debe ser un número entero positivo o 0.')
-        except ValueError:
-            errors.append('El ID del cliente debe ser un número entero válido y no puede estar vacío.')
-        
-        # Error del NAME.
-        if NAME == '' or not NAME.isalpha():
-            errors.append('El nombre del cliente debe ser válido y no puede estar vacío')
+            sk_id_int = int(SK_ID_CURR)
+            if sk_id_int < 0:
+                errors.append("El ID debe ser entero positivo o 0.")
+        except Exception:
+            errors.append("El ID debe ser un entero válido y no puede estar vacío.")
 
-        if len(errors) > 0:
-            st.markdown('#### **Se han encontrado los siguientes errores:**')
-            for error in errors:
-                st.error(error)
-        else:
-            datos_solicitante = {
-                    'SK_ID_CURR': int(SK_ID_CURR),
-                    'NAME': str(NAME),
-                    'AGE_BINS': int(AGE_BINS),
-                    'GENDER_M': int(GENDER_M),
-                    'GENDER_F': int(GENDER_F),
-                    'CNT_CHILDREN': int(CNT_CHILDREN),
-                    'LEVEL_EDUCATION_TYPE': int(LEVEL_EDUCATION_TYPE),
-                    'FAMILY_STATUS_Single_or_not_married': int(FAMILY_STATUS_Single_or_not_married),
-                    'FAMILY_STATUS_Married': int(FAMILY_STATUS_Married),
-                    'FAMILY_STATUS_Civil_marriage': int(FAMILY_STATUS_Civil_marriage),
-                    'FAMILY_STATUS_Separated': int(FAMILY_STATUS_Separated),
-                    'FAMILY_STATUS_Widow': int(FAMILY_STATUS_Widow),
-                    'HOUSING_TYPE_With_parents': int(HOUSING_TYPE_With_parents),
-                    'HOUSING_TYPE_Rented_apartment': int(HOUSING_TYPE_Rented_apartment),
-                    'HOUSING_TYPE_House_or_apartment': int(HOUSING_TYPE_House_or_apartment),
-                    'HOUSING_TYPE_Municipal_apartment': int(HOUSING_TYPE_Municipal_apartment),
-                    'HOUSING_TYPE_Office_apartment': int(HOUSING_TYPE_Office_apartment),
-                    'HOUSING_TYPE_Co_op_apartment': int(HOUSING_TYPE_Co_op_apartment),
-                    'AMT_INCOME_TOTAL': float(AMT_INCOME_TOTAL),
-                    'INCOME_TYPE_Alta_Estabilidad': int(INCOME_TYPE_Alta_Estabilidad),
-                    'INCOME_TYPE_Media_Estabilidad': int(INCOME_TYPE_Media_Estabilidad),
-                    'INCOME_TYPE_Baja_Estabilidad': int(INCOME_TYPE_Baja_Estabilidad),
-                    'INCOME_TYPE_Pensionista': int(INCOME_TYPE_Pensionista),
-                    'YEARS_ACTUAL_WORK': np.nan if YEARS_ACTUAL_WORK == '' else float(YEARS_ACTUAL_WORK),
-                    'FLAG_OWN_REALTY': int(FLAG_OWN_REALTY),
-                    'FLAG_OWN_CAR': int(FLAG_OWN_CAR),
-                    'FLAG_PHONE': int(FLAG_PHONE),
-                    'FLAG_DNI': int(FLAG_DNI),
-                    'FLAG_PASAPORTE': int(FLAG_PASAPORTE),
-                    'FLAG_COMPROBANTE_DOM_FISCAL': int(FLAG_COMPROBANTE_DOM_FISCAL),
-                    'FLAG_ESTADO_CUENTA_BANC': int(FLAG_ESTADO_CUENTA_BANC),
-                    'FLAG_TARJETA_ID_FISCAL': int(FLAG_TARJETA_ID_FISCAL),
-                    'FLAG_CERTIFICADO_LABORAL': int(FLAG_CERTIFICADO_LABORAL),
-                    'AMT_CREDIT': float(AMT_CREDIT)
-                }
-            df_datos = pd.DataFrame([datos_solicitante])
-            st.success('Se han guardado los datos correctamente.')
-            st.dataframe(df_datos)
+        if NAME == "" or (not NAME.isalpha()):
+            errors.append("El nombre debe ser válido (solo letras) y no puede estar vacío.")
 
-            # Hacemos el merge con datos_internos. Si el ID no es correcto, lanza un error y no ejecuta la predicción.
-            datos_completos = df_datos.merge(datos_internos, on='SK_ID_CURR')
-            if datos_completos.empty:
-                st.markdown('#### **Se han encontrado los siguientes errores:**')
-                st.error('El ID del solicitante no se encuentra en la base de datos interna. No se ha podido realizar la predicción.')
-                return
-
-            columnas = [
-            'SK_ID_CURR',
-            'NAME',
-            'FLAG_OWN_REALTY',
-            'CNT_CHILDREN',
-            'AMT_INCOME_TOTAL',
-            'AMT_CREDIT',
-            'LEVEL_EDUCATION_TYPE',
-            'AGE_BINS',
-            'YEARS_ACTUAL_WORK',
-            'FLAG_PHONE',
-            'DEF_30_CNT_SOCIAL_CIRCLE',
-            'FLAG_COMPROBANTE_DOM_FISCAL',
-            'FLAG_ESTADO_CUENTA_BANC',
-            'FLAG_PASAPORTE',
-            'FLAG_TARJETA_ID_FISCAL',
-            'FLAG_DNI',
-            'FLAG_CERTIFICADO_LABORAL',
-            'GENDER_F',
-            'GENDER_M',
-            'INCOME_TYPE_Alta_Estabilidad',
-            'INCOME_TYPE_Baja_Estabilidad',
-            'INCOME_TYPE_Media_Estabilidad',
-            'INCOME_TYPE_Pensionista',
-            'FAMILY_STATUS_Civil_marriage',
-            'FAMILY_STATUS_Married',
-            'FAMILY_STATUS_Separated',
-            'FAMILY_STATUS_Single_or_not_married',
-            'FAMILY_STATUS_Widow',
-            'HOUSING_TYPE_Co_op_apartment',
-            'HOUSING_TYPE_House_or_apartment',
-            'HOUSING_TYPE_Municipal_apartment',
-            'HOUSING_TYPE_Office_apartment',
-            'HOUSING_TYPE_Rented_apartment',
-            'HOUSING_TYPE_With_parents'
-            ]
-
-            datos_completos = datos_completos[columnas]
-            st.dataframe(datos_completos)
-
-            # Predicción
-            X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
-            prediction = model_final.predict(X)
-
-            st.write(f'La predicción ha sido: {prediction}')
-
-            # Creo la fila que se añadirá a historial_loans.csv
-            new_loan_variables = {
-                'SK_ID_CURR':int(SK_ID_CURR),
-                'NAME':str(NAME),
-                'CODE_GENDER':str(CODE_GENDER),
-                'FLAG_OWN_REALTY':int(FLAG_OWN_REALTY),
-                'CNT_CHILDREN':int(CNT_CHILDREN),
-                'AMT_INCOME_TOTAL':float(AMT_INCOME_TOTAL),
-                'AMT_CREDIT':float(AMT_CREDIT),
-                'NAME_INCOME_TYPE':str(INCOME_TYPE),
-                'NAME_EDUCATION_TYPE':str(NAME_EDUCATION_TYPE),
-                'NAME_FAMILY_STATUS':str(FAMILY_STATUS),
-                'NAME_HOUSING_TYPE':str(HOUSING_TYPE),
-                'AGE':int(AGES),
-                'YEARS_ACTUAL_WORK': float(YEARS_ACTUAL_WORK) if YEARS_ACTUAL_WORK != '' else None,
-                'FLAG_PHONE':int(FLAG_PHONE),
-                'DEF_30_CNT_SOCIAL_CIRCLE':int(datos_completos['DEF_30_CNT_SOCIAL_CIRCLE'][0]),
-                'FLAG_COMPROBANTE_DOM_FISCAL':int(FLAG_COMPROBANTE_DOM_FISCAL),
-                'FLAG_ESTADO_CUENTA_BANC':int(FLAG_ESTADO_CUENTA_BANC),
-                'FLAG_PASAPORTE':int(FLAG_PASAPORTE),
-                'FLAG_TARJETA_ID_FISCAL':int(FLAG_TARJETA_ID_FISCAL),
-                'FLAG_DNI':int(FLAG_DNI),
-                'FLAG_CERTIFICADO_LABORAL':int(FLAG_CERTIFICADO_LABORAL),
-                'TARGET':int(prediction)
-            }
-            new_loan = pd.DataFrame([new_loan_variables])
-
-            st.dataframe(new_loan)
-
+        years_work_value = 0.0
+        if YEARS_ACTUAL_WORK != "":
             try:
-                response = supabase.table('historical_loans').insert(new_loan_variables).execute()
-                
-                if response.data is None:
-                    st.error('No se ha podido guardar en Supabase.')
-                else:
-                    st.success('Los datos se han guardado correctamente en Supabase.')
+                years_work_value = float(YEARS_ACTUAL_WORK)
+                if years_work_value < 0:
+                    errors.append("Años de trabajo debe ser positivo.")
+            except Exception:
+                errors.append("Años de trabajo debe ser numérico (o vacío).")
 
-            except Exception as e:
-                st.error(f'Ocurrió un error al guardar en Supabase: {e}')
+        if errors:
+            st.error("Corrige los errores:")
+            for e in errors:
+                st.write("•", e)
+            st.stop()
 
-main()
+        # Construimos “fila” como en tu estructura
+        datos_solicitante = {
+            "SK_ID_CURR": int(SK_ID_CURR),
+            "NAME": str(NAME),
+            "AGE_BINS": int(AGE_BINS),
+            "AGE": int(AGES),
+            "CODE_GENDER": CODE_GENDER,
+            "GENDER_M": int(GENDER_M),
+            "GENDER_F": int(GENDER_F),
+            "CNT_CHILDREN": int(CNT_CHILDREN),
+            "NAME_EDUCATION_TYPE": NAME_EDUCATION_TYPE,
+            "LEVEL_EDUCATION_TYPE": int(LEVEL_EDUCATION_TYPE),
+            "NAME_FAMILY_STATUS": FAMILY_STATUS,
+            "NAME_HOUSING_TYPE": HOUSING_TYPE,
+            "NAME_INCOME_TYPE": INCOME_TYPE,
+            "AMT_INCOME_TOTAL": float(AMT_INCOME_TOTAL),
+            "AMT_CREDIT": float(AMT_CREDIT),
+            "YEARS_ACTUAL_WORK": float(years_work_value) if YEARS_ACTUAL_WORK != "" else None,
+            "FLAG_OWN_REALTY": int(FLAG_OWN_REALTY),
+            "FLAG_PHONE": int(FLAG_PHONE),
+            "FLAG_DNI": int(FLAG_DNI),
+            "FLAG_PASAPORTE": int(FLAG_PASAPORTE),
+            "FLAG_COMPROBANTE_DOM_FISCAL": int(FLAG_COMPROBANTE_DOM_FISCAL),
+            "FLAG_ESTADO_CUENTA_BANC": int(FLAG_ESTADO_CUENTA_BANC),
+            "FLAG_TARJETA_ID_FISCAL": int(FLAG_TARJETA_ID_FISCAL),
+            "FLAG_CERTIFICADO_LABORAL": int(FLAG_CERTIFICADO_LABORAL),
+        }
+
+        df = pd.DataFrame([datos_solicitante])
+        st.success("Datos capturados correctamente.")
+        st.dataframe(df, use_container_width=True)
+
+        # Resultados simulados
+        pd_score = dummy_pd_score({
+            "AMT_INCOME_TOTAL": AMT_INCOME_TOTAL,
+            "AMT_CREDIT": AMT_CREDIT,
+            "YEARS_ACTUAL_WORK": years_work_value,
+        })
+        score = pd_to_score(pd_score)
+        threshold = 0.5
+        decision = int(pd_score >= threshold)
+
+        st.subheader("Resultado (simulado)")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("PD (prob. impago)", f"{pd_score:.2%}")
+        c2.metric("Score", f"{score:.0f}")
+        c3.metric("Decisión", "❌ Riesgo alto" if decision else "✅ Riesgo bajo")
+
+        if pd_score < 0.2:
+            st.success("Riesgo bajo: Aprobación recomendada ✅")
+        elif pd_score < 0.4:
+            st.warning("Riesgo medio: Revisión manual 🟡")
+        else:
+            st.error("Riesgo alto: Rechazo recomendado ❌")
+
+    st.divider()
+    if st.button("⬅️ Volver", use_container_width=True):
+        st.session_state.mode = None
+        st.rerun()
+
+# -----------------------------
+# Modo 2: varias personas (tabla)
+# -----------------------------
+def bulk_table():
+    st.title("Carga múltiple (varias personas)")
+    st.write("Rellena varias solicitudes en la tabla. Resultados simulados.")
+
+    cols = [
+        "SK_ID_CURR", "NAME", "AGE", "CODE_GENDER",
+        "CNT_CHILDREN", "AMT_INCOME_TOTAL", "AMT_CREDIT",
+        "NAME_INCOME_TYPE", "NAME_EDUCATION_TYPE", "NAME_FAMILY_STATUS", "NAME_HOUSING_TYPE",
+        "YEARS_ACTUAL_WORK",
+        "FLAG_OWN_REALTY", "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
+        "FLAG_COMPROBANTE_DOM_FISCAL", "FLAG_ESTADO_CUENTA_BANC",
+        "FLAG_TARJETA_ID_FISCAL", "FLAG_CERTIFICADO_LABORAL",
+    ]
+
+    n = st.number_input("Número de solicitantes", min_value=2, max_value=200, value=5, step=1)
+    df = pd.DataFrame([{c: None for c in cols} for _ in range(int(n))])
+    df.index = range(1, int(n) + 1)  # 👈 ahora se verá 1..n
+    edited = st.data_editor(df, use_container_width=True, num_rows="fixed")
+
+
+    st.divider()
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("✅ Validar", use_container_width=True):
+            errors = []
+            if edited["SK_ID_CURR"].isna().any():
+                errors.append("Hay SK_ID_CURR vacíos.")
+            if edited["NAME"].isna().any():
+                errors.append("Hay NAME vacíos.")
+            if errors:
+                for e in errors:
+                    st.error(e)
+            else:
+                st.success("Validación básica OK.")
+
+    with col2:
+        if st.button("⚙️ Procesar (simulado)", use_container_width=True):
+            # Calcula PD/Score fila a fila de forma simulada
+            out = edited.copy()
+            out["PD"] = out.apply(
+                lambda r: dummy_pd_score({
+                    "AMT_INCOME_TOTAL": r.get("AMT_INCOME_TOTAL", 0),
+                    "AMT_CREDIT": r.get("AMT_CREDIT", 0),
+                    "YEARS_ACTUAL_WORK": r.get("YEARS_ACTUAL_WORK", 0),
+                }),
+                axis=1
+            )
+            out["SCORE"] = out["PD"].apply(pd_to_score)
+            out["DECISION"] = out["PD"].apply(lambda p: "❌ Riesgo alto" if p >= 0.5 else "✅ Riesgo bajo")
+
+            st.subheader("Resultados (simulados)")
+            st.dataframe(out, use_container_width=True)
+
+            st.download_button(
+                "Descargar resultados CSV",
+                data=out.to_csv(index=False).encode("utf-8"),
+                file_name="resultados_scoring_simulados.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+    with col3:
+        if st.button("⬅️ Volver", use_container_width=True):
+            st.session_state.mode = None
+            st.rerun()
+
+# -----------------------------
+# Router
+# -----------------------------
+if st.session_state.mode is None:
+    choose_mode()
+elif st.session_state.mode == "single":
+    single_form()
+else:
+    bulk_table()
