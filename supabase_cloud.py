@@ -5,7 +5,7 @@ import pickle
 import os
 
 with open('model_final.pkl', 'rb') as file:
-    model_final = pickle.load(file)
+    model_final = pickle.load(file)
 
 from supabase import create_client
 
