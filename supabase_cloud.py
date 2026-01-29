@@ -11,37 +11,6 @@ from supabase import create_client
 
 st.set_page_config(page_title="Credit Scoring Risk", layout="wide")
 
-def page_home():
-    # LOGO
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("logo.png", width=200)
-
-    st.markdown("<h1 style='text-align: center;'>Credit Scoring Risk</h1>", unsafe_allow_html=True)
-    
-    st.markdown(
-        """
-        <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-            <img src="https://img.freepik.com/vector-gratis/ilustracion-concepto-puntuacion-credito_114360-16474.jpg" width="400">
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.write("Bienvenido a la plataforma de evaluación de riesgo crediticio.")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("👥 Sobre Nosotros", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-        with c2:
-            if st.button("💳 Solicitar Crédito", use_container_width=True):
-                go_to_page("request")
-                st.rerun()
-
 # Función para cargar recursos (con caché para no recargar en cada interacción)
 @st.cache_resource
 def load_resources():
