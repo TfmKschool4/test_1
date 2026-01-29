@@ -9,7 +9,7 @@ from supabase import create_client
 # 1. CONFIGURACIÓN Y CARGA DE RECURSOS
 # ------------------------------------------------------
 
-st.set_page_config(page_title="Credit Scoring Risk", layout="wide")
+st.set_page_config(page_title="Creditum", layout="wide")
 
 # Función para cargar recursos (con caché para no recargar en cada interacción)
 @st.cache_resource
@@ -204,7 +204,7 @@ def page_home():
     st.markdown(f"""
     <div class="header-box">
         <h1 class="custom-title">Credit Scoring Risk</h1>
-        <p class="custom-subtitle">Plataforma inteligente de evaluación financiera y gestión de riesgo.</p>
+        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -216,7 +216,7 @@ def page_home():
 
     with col_action1:
         with st.container(border=True):
-            st.markdown("### 🏢 Nuestra Misión")
+            st.markdown("### 🏢 Sobre nosotros")
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
