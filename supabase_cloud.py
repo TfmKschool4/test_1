@@ -157,7 +157,7 @@ def page_home():
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.4); /* Oscurece un poco la foto para contraste */
+        background-color: rgba(0, 0, 0, 0.1); /* Oscurece un poco la foto para contraste */
         z-index: -1;
     }
 
