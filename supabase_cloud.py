@@ -137,117 +137,96 @@ def go_to_page(page_name):
     st.session_state.page = page_name
 
 def page_home():
-    # --- 1. ESTÉTICA Y FONDO DE PANTALLA (CORREGIDO) ---
-    # Usamos 'linear-gradient' sobre la imagen. Esto mezcla el blanco con la foto
-    # en una sola instrucción, asegurando que se vea siempre.
-    background_css = """
+    # --- 1. CSS ESTILO "GLASSMORPHISM" (Tarjetas translúcidas) ---
+    st.markdown("""
     <style>
-    /* El contenedor principal de toda la app */
+    /* FONDO DE PANTALLA */
     [data-testid="stAppViewContainer"] {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
+        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
     }
 
-    /* Hacemos transparente la barra superior (header) para que no corte la imagen */
-    [data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0);
+    /* CAPA OSCURA SUAVE PARA QUE NO BRILLE TANTO */
+    [data-testid="stAppViewContainer"]::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4); /* Oscurece un poco la foto para contraste */
+        z-index: -1;
     }
 
-    /* Títulos */
-    .title-text {
-        color: #0e1117; /* Negro suave */
+    /* CONTENEDOR DEL TÍTULO (Caja blanca) */
+    .header-box {
+        background-color: rgba(255, 255, 255, 0.90); /* Blanco al 90% opacidad */
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+
+    /* FUERZA EL COLOR DEL TEXTO A NEGRO (Importante para evitar modo oscuro) */
+    .custom-title {
+        color: #000000 !important;
         font-family: 'Helvetica Neue', sans-serif;
         font-weight: 800;
-        font-size: 3.5rem;
-        text-align: center;
-        margin-bottom: 0px;
-        line-height: 1.2;
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .custom-subtitle {
+        color: #333333 !important;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 400;
     }
     
-    .subtitle-text {
-        color: #31333F; /* Gris oscuro */
-        font-family: 'Helvetica Neue', sans-serif;
-        font-size: 1.3rem;
-        text-align: center;
-        margin-top: 10px;
-        margin-bottom: 40px;
+    /* MODIFICAR LAS TARJETAS DE ABAJO PARA QUE RESALTEN */
+    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        padding: 20px;
     }
     </style>
-    """
-    st.markdown(background_css, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    # --- 2. LOGO CENTRADO ---
-    col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
-    with col_l2:
-        try:
-            # Ajusta el width si el logo sale muy grande
-            st.image("logo.png", use_container_width=True)
-        except:
-            # Si no hay logo, mostramos un icono como fallback
-            st.markdown("<h1 style='text-align: center;'>🏦</h1>", unsafe_allow_html=True)
-
-    # --- 3. TÍTULO Y BIENVENIDA ---
-    st.markdown('<p class="title-text">Credit Scoring Risk</p>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle-text">Plataforma inteligente para la evaluación y gestión de riesgo crediticio.</p>', unsafe_allow_html=True)
+    # --- 2. CONTENIDO PRINCIPAL ---
     
-    st.divider()
+    # Usamos HTML puro para el bloque del título para tener control total del diseño
+    # Esto crea la "Caja Blanca" con el logo y el texto dentro.
+    
+    st.markdown(f"""
+    <div class="header-box">
+        <h1 class="custom-title">Credit Scoring Risk</h1>
+        <p class="custom-subtitle">Plataforma inteligente de evaluación financiera y gestión de riesgo.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN (ESTILO TARJETAS) ---
-    col_action1, col_action2 = st.columns(2, gap="large")
+    # Nota: Si prefieres el logo fuera (como imagen de Streamlit), ponlo antes del markdown anterior.
+    # Pero para que quede "bonito", te recomiendo dejar que el texto domine o poner el logo en el sidebar.
+
+    # --- 3. BOTONES DE ACCIÓN ---
+    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
 
     with col_action1:
-        with st.container(border=True):
-            st.subheader("🏢 Nuestra Misión")
-            st.write("Conoce cómo utilizamos algoritmos de Machine Learning para reducir la incertidumbre financiera.")
-            if st.button("👥 Leer Sobre Nosotros", use_container_width=True, type="secondary"):
-                go_to_page("about")
-                st.rerun()
-
-    with col_action2:
-        with st.container(border=True):
-            st.subheader("🚀 Nueva Evaluación")
-            st.write("Inicia un proceso de scoring para uno o múltiples solicitantes de forma inmediata.")
-            if st.button("💳 Iniciar Solicitud", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
-    # --- 3. TÍTULO Y BIENVENIDA ---
-    st.markdown('<p class="title-text">Credit Scoring Risk</p>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle-text">Plataforma inteligente para la evaluación y gestión de riesgo crediticio.</p>', unsafe_allow_html=True)
-    
-    st.divider() # Línea divisoria elegante
-
-    # --- 4. BOTONES DE ACCIÓN (ESTILO TARJETAS) ---
-    # Creamos dos columnas grandes para las opciones principales
-    col_action1, col_action2 = st.columns(2, gap="large")
-
-    with col_action1:
-        # Usamos container con borde para crear efecto de "Tarjeta"
         with st.container(border=True):
             st.markdown("### 🏢 Nuestra Misión")
-            st.markdown("""
-            Conoce cómo utilizamos algoritmos de Machine Learning para reducir la incertidumbre financiera.
-            
-            * Metodología transparente.
-            * Análisis de datos históricos.
-            """)
-            if st.button("👥 Leer Sobre Nosotros", use_container_width=True, type="secondary"):
+            st.info("Algoritmos de ML para reducir la incertidumbre financiera.")
+            if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
 
     with col_action2:
         with st.container(border=True):
-            st.markdown("### 🚀 Nueva Evaluación")
-            st.markdown("""
-            Inicia un proceso de scoring para uno o múltiples solicitantes de forma inmediata.
-            
-            * Evaluación en tiempo real.
-            * Carga masiva disponible.
-            """)
-            # Botón primario (rojo/color de énfasis) para la acción principal
-            if st.button("💳 Iniciar Solicitud", use_container_width=True, type="primary"):
+            st.markdown("### 🚀 Evaluación")
+            st.success("Scoring individual o masivo en tiempo real.")
+            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
                 
