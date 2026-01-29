@@ -137,58 +137,43 @@ def go_to_page(page_name):
     st.session_state.page = page_name
 
 def page_home():
-    # --- 1. ESTÉTICA Y FONDO DE PANTALLA (CSS) ---
-    # Usamos una imagen de fondo financiera de Unsplash con una capa blanca semitransparente encima
-    # para asegurar que el texto negro se lea perfectamente.
+    # --- 1. ESTÉTICA Y FONDO DE PANTALLA (CORREGIDO) ---
+    # Usamos 'linear-gradient' sobre la imagen. Esto mezcla el blanco con la foto
+    # en una sola instrucción, asegurando que se vea siempre.
     background_css = """
     <style>
-    /* Imagen de fondo fija */
-    [data-testid="stAppViewContainer"] > .main {
-        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
+    /* El contenedor principal de toda la app */
+    [data-testid="stAppViewContainer"] {
+        background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
     }
-    
-    /* Capa blanca semitransparente para legibilidad */
-    [data-testid="stAppViewContainer"] > .main::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.85); 
-        z-index: -1;
+
+    /* Hacemos transparente la barra superior (header) para que no corte la imagen */
+    [data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
     }
 
-    /* Estilo para los títulos */
+    /* Títulos */
     .title-text {
-        color: #0e1117;
+        color: #0e1117; /* Negro suave */
         font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 700;
-        font-size: 3rem;
+        font-weight: 800;
+        font-size: 3.5rem;
         text-align: center;
         margin-bottom: 0px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        line-height: 1.2;
     }
     
     .subtitle-text {
-        color: #4f4f4f;
+        color: #31333F; /* Gris oscuro */
         font-family: 'Helvetica Neue', sans-serif;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         text-align: center;
         margin-top: 10px;
         margin-bottom: 40px;
-    }
-    
-    /* Estilo para las tarjetas (contenedores) */
-    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     </style>
     """
@@ -198,11 +183,36 @@ def page_home():
     col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
     with col_l2:
         try:
-            # Asegúrate de tener 'logo.png' en la carpeta. Si no, usa un placeholder.
+            # Ajusta el width si el logo sale muy grande
             st.image("logo.png", use_container_width=True)
         except:
-            st.warning("⚠️ Sube tu archivo 'logo.png' para verlo aquí.")
+            # Si no hay logo, mostramos un icono como fallback
+            st.markdown("<h1 style='text-align: center;'>🏦</h1>", unsafe_allow_html=True)
 
+    # --- 3. TÍTULO Y BIENVENIDA ---
+    st.markdown('<p class="title-text">Credit Scoring Risk</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle-text">Plataforma inteligente para la evaluación y gestión de riesgo crediticio.</p>', unsafe_allow_html=True)
+    
+    st.divider()
+
+    # --- 4. BOTONES DE ACCIÓN (ESTILO TARJETAS) ---
+    col_action1, col_action2 = st.columns(2, gap="large")
+
+    with col_action1:
+        with st.container(border=True):
+            st.subheader("🏢 Nuestra Misión")
+            st.write("Conoce cómo utilizamos algoritmos de Machine Learning para reducir la incertidumbre financiera.")
+            if st.button("👥 Leer Sobre Nosotros", use_container_width=True, type="secondary"):
+                go_to_page("about")
+                st.rerun()
+
+    with col_action2:
+        with st.container(border=True):
+            st.subheader("🚀 Nueva Evaluación")
+            st.write("Inicia un proceso de scoring para uno o múltiples solicitantes de forma inmediata.")
+            if st.button("💳 Iniciar Solicitud", use_container_width=True, type="primary"):
+                go_to_page("request")
+                st.rerun()
     # --- 3. TÍTULO Y BIENVENIDA ---
     st.markdown('<p class="title-text">Credit Scoring Risk</p>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle-text">Plataforma inteligente para la evaluación y gestión de riesgo crediticio.</p>', unsafe_allow_html=True)
