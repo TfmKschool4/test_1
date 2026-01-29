@@ -181,7 +181,7 @@ def page_home():
     }
 
     .custom-subtitle {
-        color: #333333 !important;
+        color: #141414 !important;
         font-family: 'Helvetica Neue', sans-serif;
         font-size: 1.2rem;
         font-weight: 400;
