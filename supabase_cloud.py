@@ -11,17 +11,6 @@ from supabase import create_client
 
 st.set_page_config(page_title="Credit Scoring Risk", layout="wide")
 
-# --- NUEVO CÓDIGO: LOGO EN SIDEBAR ---
-try:
-    # Asegúrate de que 'logo.png' esté en la misma carpeta que tu script
-    st.sidebar.image("logo.png", use_container_width=True) 
-except:
-    # Esto evita que la app falle si no encuentra la imagen
-    st.sidebar.write("⚠️ Logo no cargado")
-# -------------------------------------
-
-# Función para cargar recursos...
-# ... (resto del código) ...
 # Función para cargar recursos (con caché para no recargar en cada interacción)
 @st.cache_resource
 def load_resources():
@@ -148,6 +137,14 @@ def go_to_page(page_name):
     st.session_state.page = page_name
 
 def page_home():
+    # --- NUEVO CÓDIGO: LOGO CENTRADO ---
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
+    with col_logo2:
+        try:
+            st.image("logo.png", width=300) # Ajusta el width según el tamaño de tu logo
+        except:
+            st.warning("Imagen logo.png no encontrada")
+    # -----------------------------------
     st.markdown("<h1 style='text-align: center;'>Credit Scoring Risk</h1>", unsafe_allow_html=True)
     
     # He eliminado la línea que causaba error y dejado solo el código que muestra la imagen
