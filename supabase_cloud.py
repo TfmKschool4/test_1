@@ -217,7 +217,6 @@ def page_home():
     with col_action1:
         with st.container(border=True):
             st.markdown("### 🏢 Nuestra Misión")
-            st.info("Algoritmos de ML para reducir la incertidumbre financiera.")
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
