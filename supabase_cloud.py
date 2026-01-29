@@ -203,7 +203,7 @@ def page_home():
     
     st.markdown(f"""
     <div class="header-box">
-        <h1 class="custom-title">Credit Scoring Risk</h1>
+        <h1 class="custom-title">Creditum</h1>
         <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
     </div>
     """, unsafe_allow_html=True)
