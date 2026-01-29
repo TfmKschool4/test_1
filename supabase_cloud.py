@@ -166,21 +166,19 @@ def page_home():
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    
     st.title("Sobre Nosotros")
-    
+
+    # 🔽 MODIFICADO: TEXTO CORPORATIVO
     st.markdown("""
-    ### Proyecto TFM - Master Data Science KSchool
-    
-    ¡Hola! Somos un equipo de estudiantes apasionados por la Ciencia de Datos. Esta aplicación representa la culminación de nuestro aprendizaje en el **Master de Data Science de KSchool**.
-    
-    **El Objetivo:**
-    El propósito de este proyecto de Trabajo de Fin de Máster (TFM) es desarrollar una herramienta inteligente de *Credit Scoring*. Utilizando algoritmos de Machine Learning avanzados, nuestra aplicación analiza múltiples factores financieros y demográficos para determinar la viabilidad de conceder un crédito.
-    
-    **¿Qué hace esta web?**
-    Funciona como una interfaz para nuestro modelo predictivo. Toma los datos de un solicitante (o varios), los procesa cruzándolos con nuestra base de datos histórica y emite una recomendación basada en la probabilidad de impago.
-    
-    > *La tecnología al servicio de decisiones financieras más justas y eficientes.*
+    Somos una plataforma especializada en **analítica avanzada y evaluación de riesgo crediticio**, diseñada para apoyar la toma de decisiones financieras mediante el uso de **modelos predictivos y técnicas de Machine Learning**.
+
+    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el objetivo de **estimar la probabilidad de impago** de un solicitante y proporcionar recomendaciones objetivas, consistentes y escalables para la concesión de crédito.
+
+    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo tanto el análisis **individual** como el **procesamiento masivo de solicitudes**, con trazabilidad de resultados y almacenamiento histórico de decisiones.
+
+    Creemos en el uso responsable de la tecnología para impulsar **decisiones financieras más inteligentes, eficientes y basadas en datos**, reduciendo la incertidumbre y mejorando la gestión del riesgo.
+
+    > *La tecnología al servicio de decisiones financieras más seguras y eficientes.*
     """)
     #  - Opcional
 
