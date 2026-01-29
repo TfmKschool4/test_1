@@ -3,14 +3,13 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-import base64
 from supabase import create_client
 
 # ------------------------------------------------------
 # 1. CONFIGURACIÓN Y CARGA DE RECURSOS
 # ------------------------------------------------------
 
-st.set_page_config(page_title="Creditum", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="Creditum", layout="wide")
 
 # Función para cargar recursos (con caché para no recargar en cada interacción)
 @st.cache_resource
@@ -20,37 +19,25 @@ def load_resources():
         with open('model_final.pkl', 'rb') as file:
             model = pickle.load(file)
     except FileNotFoundError:
-        # Creamos un modelo dummy para que la app no falle si no tienes el pkl a mano
-        st.warning("Aviso: 'model_final.pkl' no encontrado. Usando modo demostración.")
-        model = "DUMMY_MODEL" 
+        st.error("Error: No se encuentra el archivo 'model_final.pkl'.")
+        model = None
 
     # Cargar Datos Internos
     try:
         datos_internos = pd.read_csv('datos_internos.csv', index_col=0)
     except FileNotFoundError:
-        st.warning("Aviso: 'datos_internos.csv' no encontrado. Usando datos vacíos.")
-        datos_internos = pd.DataFrame()
+        st.error("Error: No se encuentra el archivo 'datos_internos.csv'.")
+        datos_internos = None
         
     return model, datos_internos
 
-# Función auxiliar para convertir imagen a base64 (para insertarla en HTML/CSS)
-def get_img_as_base64(file_path):
-    try:
-        with open(file_path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except Exception:
-        return None
-
 # Conexión Supabase
 try:
-    url = os.environ.get('SUPABASE_URL', '')
-    key = os.environ.get('SUPABASE_KEY', '')
-    if url and key:
-        supabase = create_client(url, key)
-    else:
-        supabase = None
-except Exception:
+    url = os.environ['SUPABASE_URL']
+    key = os.environ['SUPABASE_KEY']
+    supabase = create_client(url, key)
+except KeyError:
+    st.warning("Variables de entorno de Supabase no configuradas. La funcionalidad de guardado no funcionará.")
     supabase = None
 
 model_final, datos_internos_df = load_resources()
@@ -63,23 +50,15 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     """
     Procesa una única solicitud (diccionario pre-procesado), hace el merge, predice y guarda.
     """
-    if model_final == "DUMMY_MODEL":
-        # Simulación para demo si falta el archivo
-        return np.random.choice([0, 1]), pd.DataFrame([datos_solicitante])
-
     df_datos = pd.DataFrame([datos_solicitante])
     
     # Merge con datos internos
-    if not datos_internos_df.empty:
-        datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR', how='left')
-        # Rellenar nulos si el ID no cruza, para no romper el modelo
-        datos_completos.fillna(0, inplace=True)
-    else:
-        datos_completos = df_datos
-        # Añadir columna faltante dummy si no hay csv interno
-        datos_completos['DEF_30_CNT_SOCIAL_CIRCLE'] = 0
+    datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
+    
+    if datos_completos.empty:
+        return None, "ID no encontrado en base interna"
 
-    # Columnas requeridas por el modelo (asegurar orden)
+    # Columnas requeridas por el modelo
     columnas_modelo = [
         'SK_ID_CURR', 'NAME', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'CNT_CHILDREN',
         'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'LEVEL_EDUCATION_TYPE', 'AGE_BINS',
@@ -96,20 +75,11 @@ def process_single_prediction(datos_solicitante, raw_input_data):
         'HOUSING_TYPE_Rented_apartment', 'HOUSING_TYPE_With_parents'
     ]
     
-    # Asegurar que todas las columnas existan, si falta alguna poner 0
-    for col in columnas_modelo:
-        if col not in datos_completos.columns:
-            datos_completos[col] = 0
-            
     datos_completos = datos_completos[columnas_modelo]
     
     # Predicción
     X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
-    
-    try:
-        prediction = model_final.predict(X)[0] # Tomamos el valor escalar
-    except Exception as e:
-        return None, f"Error en predicción: {str(e)}"
+    prediction = model_final.predict(X)[0] # Tomamos el valor escalar
     
     # Guardar en Supabase
     save_to_supabase(raw_input_data, datos_completos, prediction)
@@ -145,8 +115,9 @@ def save_to_supabase(raw_data, datos_completos, prediction):
             'TARGET': int(prediction)
         }
         supabase.table('historical_loans').insert(new_loan_variables).execute()
+        # No mostramos success aquí para no saturar si es masivo, se maneja fuera
     except Exception as e:
-        print(f"Error Supabase: {e}")
+        st.error(f"Error Supabase ID {raw_data['SK_ID_CURR']}: {e}")
 
 # Mapeos auxiliares para transformar texto a números/dummies
 def get_mappings():
@@ -166,15 +137,7 @@ def go_to_page(page_name):
     st.session_state.page = page_name
 
 def page_home():
-    # Convertir logo a base64 para insertarlo en HTML
-    logo_b64 = get_img_as_base64("logo.jpg")
-    if not logo_b64:
-        # Fallback si no encuentra la imagen
-        logo_html = "<h1 class='custom-title'>Creditum</h1>"
-    else:
-        logo_html = f'<img src="data:image/jpeg;base64,{logo_b64}" class="logo-img" alt="Creditum Logo">'
-
-    # --- 1. CSS ESTILO "GLASSMORPHISM" MEJORADO ---
+    # --- 1. CSS ESTILO "GLASSMORPHISM" (Tarjetas translúcidas) ---
     st.markdown("""
     <style>
     /* FONDO DE PANTALLA */
@@ -186,7 +149,7 @@ def page_home():
         background-attachment: fixed;
     }
 
-    /* CAPA OSCURA SUAVE */
+    /* CAPA OSCURA SUAVE PARA QUE NO BRILLE TANTO */
     [data-testid="stAppViewContainer"]::before {
         content: "";
         position: absolute;
@@ -194,70 +157,59 @@ def page_home():
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.2); 
+        background-color: rgba(0, 0, 0, 0.1); /* Oscurece un poco la foto para contraste */
         z-index: -1;
     }
 
-    /* CONTENEDOR CENTRAL (Glass Card) */
+    /* CONTENEDOR DEL TÍTULO (Caja blanca) */
     .header-box {
-        background: rgba(255, 255, 255, 0.85); /* Blanco translúcido */
-        backdrop-filter: blur(12px);            /* Efecto desenfoque */
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6); /* Borde sutil */
-        border-radius: 24px;
-        padding: 50px 30px;
-        margin-bottom: 40px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15); /* Sombra suave */
+        background-color: rgba(255, 255, 255, 0.90); /* Blanco al 90% opacidad */
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         text-align: center;
-        display: flex;
-        flex-direction: column;
-        align_items: center;
-        justify_content: center;
     }
 
-    /* ESTILO DE IMAGEN DEL LOGO */
-    .logo-img {
-        max-width: 400px;
-        width: 100%;
-        height: auto;
-        margin-bottom: 15px;
-        filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1));
-    }
-
-    /* SUBTÍTULO CON ALTO CONTRASTE */
-    .custom-subtitle {
-        color: #1a1a1a !important; /* Gris muy oscuro casi negro */
+    /* FUERZA EL COLOR DEL TEXTO A NEGRO (Importante para evitar modo oscuro) */
+    .custom-title {
+        color: #000000 !important;
         font-family: 'Helvetica Neue', sans-serif;
-        font-size: 1.5rem;
-        font-weight: 600; /* Letra más gruesa para leerse mejor */
-        margin-top: 10px;
-        text-shadow: 0px 0px 20px rgba(255,255,255, 0.8); /* Halo blanco para separar del fondo si es necesario */
+        font-weight: 800;
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .custom-subtitle {
+        color: #141414 !important;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 400;
     }
     
-    /* MODIFICAR LAS TARJETAS DE ABAJO PARA QUE SEAN COHERENTES */
+    /* MODIFICAR LAS TARJETAS DE ABAJO PARA QUE RESALTEN */
     div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
         background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
+        border-radius: 10px;
         padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    
-    /* BOTONES */
-    .stButton > button {
-        font-weight: 600;
     }
     </style>
     """, unsafe_allow_html=True)
 
     # --- 2. CONTENIDO PRINCIPAL ---
     
+    # Usamos HTML puro para el bloque del título para tener control total del diseño
+    # Esto crea la "Caja Blanca" con el logo y el texto dentro.
+    
     st.markdown(f"""
     <div class="header-box">
-        {logo_html}
+        <h1 class="custom-title">Creditum</h1>
         <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Nota: Si prefieres el logo fuera (como imagen de Streamlit), ponlo antes del markdown anterior.
+    # Pero para que quede "bonito", te recomiendo dejar que el texto domine o poner el logo en el sidebar.
 
     # --- 3. BOTONES DE ACCIÓN ---
     col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
@@ -293,6 +245,7 @@ def page_about():
 
     > *La tecnología al servicio de decisiones financieras más seguras y eficientes.*
     """)
+    #  - Opcional
 
 def page_credit_request():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
@@ -362,6 +315,9 @@ def page_credit_request():
                 AGE_BINS = pd.cut([AGES], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
 
                 # Construcción del diccionario de datos (One Hot Encoding Manual)
+                # NOTA: Para no repetir código extenso, simplificamos la lógica de asignación
+                # asumiendo que el modelo espera exactamente los nombres de columnas de tu código original.
+                
                 datos_solicitante = {
                     'SK_ID_CURR': int(SK_ID_CURR),
                     'NAME': NAME,
@@ -383,7 +339,8 @@ def page_credit_request():
                 # OHE Family Status
                 fam_opts = ['Single / not married', 'Married', 'Civil marriage', 'Separated', 'Widow']
                 for f in fam_opts:
-                    col_name = f"FAMILY_STATUS_{f.replace(' / ', '_or_').replace(' ', '_')}" 
+                    col_name = f"FAMILY_STATUS_{f.replace(' / ', '_or_').replace(' ', '_')}" # Ajuste manual para coincidir con tu key original si difiere
+                    # Usando tus keys exactas:
                     if f == 'Single / not married': k = 'FAMILY_STATUS_Single_or_not_married'
                     elif f == 'Civil marriage': k = 'FAMILY_STATUS_Civil_marriage'
                     else: k = f"FAMILY_STATUS_{f}"
@@ -393,7 +350,7 @@ def page_credit_request():
                 hous_opts = ['With parents', 'Rented apartment', 'House / apartment', 'Municipal apartment', 'Office apartment', 'Co-op apartment']
                 for h in hous_opts:
                     if h == 'House / apartment': k = 'HOUSING_TYPE_House_or_apartment'
-                    elif h == 'Co-op apartment': k = 'HOUSING_TYPE_Co_op_apartment' 
+                    elif h == 'Co-op apartment': k = 'HOUSING_TYPE_Co_op_apartment' # Ajuste guion
                     else: k = f"HOUSING_TYPE_{h.replace(' ', '_')}"
                     datos_solicitante[k] = 1 if HOUSING_TYPE == h else 0
 
@@ -455,6 +412,8 @@ def page_credit_request():
             "YEARS_WORKED": st.column_config.NumberColumn("Años Trabajados", min_value=0),
             "OWN_REALTY": st.column_config.CheckboxColumn("Casa Propia"),
             "OWN_CAR": st.column_config.CheckboxColumn("Coche Propio"),
+            # Simplificamos algunos flags documentales para que la tabla no sea kilométrica, 
+            # asumiendo True por defecto o añadiendo solo los críticos. Añade más si es necesario.
             "FLAG_PHONE": st.column_config.CheckboxColumn("Teléfono"),
             "FLAG_DNI": st.column_config.CheckboxColumn("DNI"),
             "FLAG_PASAPORTE": st.column_config.CheckboxColumn("Pasaporte"),
@@ -462,17 +421,18 @@ def page_credit_request():
             "FLAG_COMPROBANTE_DOM_FISCAL": st.column_config.CheckboxColumn("Comp. Domicilio"),
             "FLAG_ESTADO_CUENTA_BANC": st.column_config.CheckboxColumn("Estado Cuenta"),
             "FLAG_TARJETA_ID_FISCAL": st.column_config.CheckboxColumn("ID Fiscal")
+
         }
 
         # DataFrame plantilla
         df_template = pd.DataFrame(columns=[
-            "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
-            "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
-            "YEARS_WORKED", "OWN_REALTY", "OWN_CAR",
-            "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
-            "FLAG_CERTIFICADO_LABORAL", "FLAG_COMPROBANTE_DOM_FISCAL",
-            "FLAG_ESTADO_CUENTA_BANC", "FLAG_TARJETA_ID_FISCAL"
-        ])
+    "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
+    "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
+    "YEARS_WORKED", "OWN_REALTY", "OWN_CAR",
+    "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
+    "FLAG_CERTIFICADO_LABORAL", "FLAG_COMPROBANTE_DOM_FISCAL",
+    "FLAG_ESTADO_CUENTA_BANC", "FLAG_TARJETA_ID_FISCAL"
+    ])
 
         edited_df = st.data_editor(df_template, num_rows="dynamic", column_config=column_config, use_container_width=True)
 
@@ -490,18 +450,20 @@ def page_credit_request():
                 for index, row in edited_df.iterrows():
                     # Preparar datos fila por fila
                     try:
-                        # 1. Definir docs_ok basado en los flags de la fila
-                        # Si quieres ser estricto: docs_ok = 1 si TIENE DNI y PASAPORTE, por ejemplo.
-                        # Aquí asumiremos que cada flag individual cuenta, y docs_ok era una variable auxiliar.
-                        # La usamos como 1 para cumplir con los requerimientos del diccionario si faltan datos específicos.
-                        
-                        flag_dni = 1 if row.get('FLAG_DNI') else 0
-                        flag_pass = 1 if row.get('FLAG_PASAPORTE') else 0
-                        
-                        # Mapeos básicos
+                        # 1. Mapeos básicos
                         age_bin = pd.cut([row['AGE']], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
+                        raw_input = {
+                        'FLAG_PHONE': row['FLAG_PHONE'],
+                        'FLAG_DNI': row['FLAG_DNI'],
+                        'FLAG_PASAPORTE': row['FLAG_PASAPORTE'],
+                        'FLAG_CERTIFICADO_LABORAL': row['FLAG_CERTIFICADO_LABORAL'],
+                        'FLAG_COMPROBANTE_DOM_FISCAL': row['FLAG_COMPROBANTE_DOM_FISCAL'],
+                        'FLAG_ESTADO_CUENTA_BANC': row['FLAG_ESTADO_CUENTA_BANC'],
+                        'FLAG_TARJETA_ID_FISCAL': row['FLAG_TARJETA_ID_FISCAL'],
+                        }
+
                         
-                        # Construir diccionario solicitante
+                        # Construir diccionario solicitante (misma lógica que individual)
                         d = {
                             'SK_ID_CURR': int(row['SK_ID_CURR']),
                             'NAME': row['NAME'],
@@ -513,18 +475,14 @@ def page_credit_request():
                             'AMT_INCOME_TOTAL': float(row['AMT_INCOME']),
                             'AMT_CREDIT': float(row['AMT_CREDIT']),
                             'YEARS_ACTUAL_WORK': float(row['YEARS_WORKED']) if pd.notnull(row['YEARS_WORKED']) else np.nan,
-                            'FLAG_OWN_CAR': int(row['OWN_CAR']), 
-                            'FLAG_OWN_REALTY': int(row['OWN_REALTY']),
-                            'FLAG_PHONE': int(row.get('FLAG_PHONE', 0)), 
-                            'FLAG_DNI': flag_dni, 
-                            'FLAG_PASAPORTE': flag_pass, 
-                            'FLAG_COMPROBANTE_DOM_FISCAL': int(row.get('FLAG_COMPROBANTE_DOM_FISCAL', 0)), 
-                            'FLAG_ESTADO_CUENTA_BANC': int(row.get('FLAG_ESTADO_CUENTA_BANC', 0)), 
-                            'FLAG_TARJETA_ID_FISCAL': int(row.get('FLAG_TARJETA_ID_FISCAL', 0)), 
-                            'FLAG_CERTIFICADO_LABORAL': int(row.get('FLAG_CERTIFICADO_LABORAL', 0))
+                            'FLAG_OWN_CAR': int(row['OWN_CAR']), 'FLAG_OWN_REALTY': int(row['OWN_REALTY']),
+                            # Asumimos que si marcó "Docs OK", tiene todo. Si no, ajustar según necesidad.
+                            'FLAG_PHONE': 1, 'FLAG_DNI': docs_ok, 'FLAG_PASAPORTE': docs_ok, 
+                            'FLAG_COMPROBANTE_DOM_FISCAL': docs_ok, 'FLAG_ESTADO_CUENTA_BANC': docs_ok, 
+                            'FLAG_TARJETA_ID_FISCAL': docs_ok, 'FLAG_CERTIFICADO_LABORAL': docs_ok
                         }
 
-                        # OHE Family
+                        # OHE Family (Lógica simplificada para tabla)
                         fs = row['FAMILY_STATUS']
                         d['FAMILY_STATUS_Single_or_not_married'] = 1 if fs == 'Single / not married' else 0
                         d['FAMILY_STATUS_Married'] = 1 if fs == 'Married' else 0
@@ -557,11 +515,9 @@ def page_credit_request():
                             'AMT_INCOME_TOTAL': row['AMT_INCOME'], 'AMT_CREDIT': row['AMT_CREDIT'],
                             'YEARS_ACTUAL_WORK': row['YEARS_WORKED'],
                             'FLAG_OWN_REALTY': row['OWN_REALTY'], 'FLAG_OWN_CAR': row['OWN_CAR'],
-                            'FLAG_PHONE': d['FLAG_PHONE'], 'FLAG_DNI': d['FLAG_DNI'], 'FLAG_PASAPORTE': d['FLAG_PASAPORTE'],
-                            'FLAG_COMPROBANTE_DOM_FISCAL': d['FLAG_COMPROBANTE_DOM_FISCAL'], 
-                            'FLAG_ESTADO_CUENTA_BANC': d['FLAG_ESTADO_CUENTA_BANC'],
-                            'FLAG_TARJETA_ID_FISCAL': d['FLAG_TARJETA_ID_FISCAL'], 
-                            'FLAG_CERTIFICADO_LABORAL': d['FLAG_CERTIFICADO_LABORAL']
+                            'FLAG_PHONE': 1, 'FLAG_DNI': docs_ok, 'FLAG_PASAPORTE': docs_ok,
+                            'FLAG_COMPROBANTE_DOM_FISCAL': docs_ok, 'FLAG_ESTADO_CUENTA_BANC': docs_ok,
+                            'FLAG_TARJETA_ID_FISCAL': docs_ok, 'FLAG_CERTIFICADO_LABORAL': docs_ok
                         }
 
                         # Predecir
@@ -578,6 +534,7 @@ def page_credit_request():
                 st.success("Proceso completado.")
                 st.table(pd.DataFrame(results_log))
 
+
 # ------------------------------------------------------
 # 4. ENRUTAMIENTO PRINCIPAL
 # ------------------------------------------------------
@@ -589,5 +546,7 @@ if st.session_state.page == "home":
     page_home()
 elif st.session_state.page == "about":
     page_about()
+elif st.session_state.page == "request":
+    page_credit_request()
 elif st.session_state.page == "request":
     page_credit_request()
