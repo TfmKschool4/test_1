@@ -137,38 +137,107 @@ def go_to_page(page_name):
     st.session_state.page = page_name
 
 def page_home():
-    # --- NUEVO CÓDIGO: LOGO CENTRADO ---
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
-    with col_logo2:
-        try:
-            st.image("logo.png", width=300) # Ajusta el width según el tamaño de tu logo
-        except:
-            st.warning("Imagen logo.png no encontrada")
-    # -----------------------------------
-    st.markdown("<h1 style='text-align: center;'>Credit Scoring Risk</h1>", unsafe_allow_html=True)
+    # --- 1. ESTÉTICA Y FONDO DE PANTALLA (CSS) ---
+    # Usamos una imagen de fondo financiera de Unsplash con una capa blanca semitransparente encima
+    # para asegurar que el texto negro se lea perfectamente.
+    background_css = """
+    <style>
+    /* Imagen de fondo fija */
+    [data-testid="stAppViewContainer"] > .main {
+        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
     
-    # He eliminado la línea que causaba error y dejado solo el código que muestra la imagen
-    st.markdown(
-        """
-        <div style="display: flex; justify_content: center; margin-bottom: 30px;">
-            <img src="https://img.freepik.com/vector-gratis/ilustracion-concepto-puntuacion-credito_114360-16474.jpg" width="400">
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+    /* Capa blanca semitransparente para legibilidad */
+    [data-testid="stAppViewContainer"] > .main::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.85); 
+        z-index: -1;
+    }
 
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.write("Bienvenido a la plataforma de evaluación de riesgo crediticio.")
-        
-        # Botones grandes
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("👥 Sobre Nosotros", use_container_width=True):
+    /* Estilo para los títulos */
+    .title-text {
+        color: #0e1117;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 700;
+        font-size: 3rem;
+        text-align: center;
+        margin-bottom: 0px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .subtitle-text {
+        color: #4f4f4f;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 1.2rem;
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 40px;
+    }
+    
+    /* Estilo para las tarjetas (contenedores) */
+    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    </style>
+    """
+    st.markdown(background_css, unsafe_allow_html=True)
+
+    # --- 2. LOGO CENTRADO ---
+    col_l1, col_l2, col_l3 = st.columns([1, 1, 1])
+    with col_l2:
+        try:
+            # Asegúrate de tener 'logo.png' en la carpeta. Si no, usa un placeholder.
+            st.image("logo.png", use_container_width=True)
+        except:
+            st.warning("⚠️ Sube tu archivo 'logo.png' para verlo aquí.")
+
+    # --- 3. TÍTULO Y BIENVENIDA ---
+    st.markdown('<p class="title-text">Credit Scoring Risk</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle-text">Plataforma inteligente para la evaluación y gestión de riesgo crediticio.</p>', unsafe_allow_html=True)
+    
+    st.divider() # Línea divisoria elegante
+
+    # --- 4. BOTONES DE ACCIÓN (ESTILO TARJETAS) ---
+    # Creamos dos columnas grandes para las opciones principales
+    col_action1, col_action2 = st.columns(2, gap="large")
+
+    with col_action1:
+        # Usamos container con borde para crear efecto de "Tarjeta"
+        with st.container(border=True):
+            st.markdown("### 🏢 Nuestra Misión")
+            st.markdown("""
+            Conoce cómo utilizamos algoritmos de Machine Learning para reducir la incertidumbre financiera.
+            
+            * Metodología transparente.
+            * Análisis de datos históricos.
+            """)
+            if st.button("👥 Leer Sobre Nosotros", use_container_width=True, type="secondary"):
                 go_to_page("about")
                 st.rerun()
-        with c2:
-            if st.button("💳 Solicitar Crédito", use_container_width=True):
+
+    with col_action2:
+        with st.container(border=True):
+            st.markdown("### 🚀 Nueva Evaluación")
+            st.markdown("""
+            Inicia un proceso de scoring para uno o múltiples solicitantes de forma inmediata.
+            
+            * Evaluación en tiempo real.
+            * Carga masiva disponible.
+            """)
+            # Botón primario (rojo/color de énfasis) para la acción principal
+            if st.button("💳 Iniciar Solicitud", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
                 
