@@ -47,41 +47,19 @@ model_final, datos_internos_df = load_resources()
 # ------------------------------------------------------
 
 def process_single_prediction(datos_solicitante, raw_input_data):
-    """
-    Procesa solicitud, predice y gestiona el guardado en CSV.
-    """
-    df_datos = pd.DataFrame([datos_solicitante])
+    # ... (lógica de merge y preparación de X)
     
-    # Merge con datos internos (Bureau)
-    datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
-    
-    if datos_completos.empty:
-        return None, "ID no encontrado en base interna (Bureau)"
-    
-    # Columnas del modelo (sin ID ni NAME)
-    columnas_modelo = list(model_final.feature_names_in_)
-
-    # Construir X asegurando compatibilidad total con el modelo
-    X = datos_completos.copy()
-
-    # Eliminar columnas que el modelo no usa
-    for col in ['SK_ID_CURR', 'NAME']:
-        if col in X.columns:
-            X = X.drop(col, axis=1)
-
-    # Añadir columnas faltantes
-    for col in columnas_modelo:
-        if col not in X.columns:
-            X[col] = 0
-
-    # Eliminar columnas extra y ordenar
-    X = X[columnas_modelo]
-
-    # Predicción
+    # Realizar la predicción
     prediction = model_final.predict(X)[0]
 
-    # Guardado en CSV
+    # GUARDADO: Aquí es donde se ejecuta la persistencia en el CSV
     saved_ok, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
+    
+    # Opcional: Mostrar el mensaje de guardado en la consola de Streamlit
+    if saved_ok:
+        st.info(saved_msg)
+    else:
+        st.warning(saved_msg)
 
     return prediction, datos_completos
 
@@ -90,61 +68,39 @@ def process_single_prediction(datos_solicitante, raw_input_data):
 # ------------------------------------------------------
 
 def save_to_csv(raw_data, datos_completos, prediction):
-    """
-    Guarda la predicción en un CSV local verificando duplicados.
-    Retorna: (bool_exito, str_mensaje)
-    """
     filename = 'historial_creditos.csv'
     current_id = int(raw_data['SK_ID_CURR'])
 
-    # 1. VERIFICAR SI EL ARCHIVO EXISTE Y LEERLO PARA BUSCAR DUPLICADOS
+    # 1. Verificar duplicados
     if os.path.exists(filename):
-        try:
-            # Leemos solo la columna ID para ser más rápidos
-            df_history = pd.read_csv(filename, usecols=['SK_ID_CURR'])
-            
-            # Chequeo de clave primaria (Si el ID ya está en la lista)
-            if current_id in df_history['SK_ID_CURR'].values:
-                return False, f"El ID {current_id} ya existe en {filename}."
-        except Exception as e:
-            # Si hay error leyendo (ej. archivo vacío), continuamos para crearlo/sobreescribirlo
-            pass
+        df_history = pd.read_csv(filename)
+        if current_id in df_history['SK_ID_CURR'].values:
+            return False, f"El ID {current_id} ya existe en el historial."
 
-    # 2. PREPARAR DATOS PARA GUARDAR
+    # 2. Mapear datos (Asegúrate de que las llaves coincidan con raw_input_data del formulario)
     new_loan_variables = {
         'SK_ID_CURR': current_id,
-        'NAME': str(raw_data['NAME']),
-        'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
-        'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
-        'CNT_CHILDREN': int(raw_data['CNT_CHILDREN_MAPPED']),
-        'AMT_INCOME_TOTAL': float(raw_data['AMT_INCOME_TOTAL']),
-        'AMT_CREDIT': float(raw_data['AMT_CREDIT']),
-        'NAME_INCOME_TYPE': str(raw_data['INCOME_TYPE']),
-        'NAME_EDUCATION_TYPE': str(raw_data['NAME_EDUCATION_TYPE']),
-        'NAME_FAMILY_STATUS': str(raw_data['FAMILY_STATUS']),
-        'NAME_HOUSING_TYPE': str(raw_data['HOUSING_TYPE']),
-        'AGE': int(raw_data['AGE']),
-        'YEARS_ACTUAL_WORK': float(raw_data['YEARS_ACTUAL_WORK']) if raw_data['YEARS_ACTUAL_WORK'] else None,
-        'TARGET': int(prediction),
-        'FECHA_REGISTRO': pd.Timestamp.now() # Opcional: añadimos fecha
+        'NAME': raw_data.get('NAME', 'N/A'),
+        'GENERO': raw_data.get('GENDER', 'N/A'),
+        'EDAD': raw_data.get('AGE', 0),
+        'INGRESOS': raw_data.get('AMT_INCOME_TOTAL', 0),
+        'CREDITO_SOLICITADO': raw_data.get('AMT_CREDIT', 0),
+        'RESULTADO_PREDICCION': "APROBADO" if prediction == 0 else "DENEGADO",
+        'FECHA_REGISTRO': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     
-    # Creamos un DataFrame de una sola fila
     df_new_row = pd.DataFrame([new_loan_variables])
 
-    # 3. GUARDAR (APPEND)
+    # 3. Guardar
     try:
-        # Si el archivo no existe, escribimos con cabecera (header=True)
-        # Si existe, escribimos sin cabecera (header=False) y modo 'a' (append)
         if not os.path.exists(filename):
             df_new_row.to_csv(filename, index=False, mode='w')
         else:
             df_new_row.to_csv(filename, index=False, mode='a', header=False)
-            
-        return True, "Registro guardado exitosamente en CSV local."
-        
+        return True, "Datos guardados en el historial local."
     except Exception as e:
-        return False, f"Error al escribir en CSV: {str(e)}"
+        return False, f"Error al guardar: {str(e)}"
+        
 # Mapeos auxiliares para transformar texto a números/dummies
 def get_mappings():
     return {
@@ -579,6 +535,14 @@ def page_credit_request():
                 
                 st.success("Proceso completado.")
                 st.table(pd.DataFrame(results_log))
+
+
+if st.checkbox("Ver historial de solicitudes (CSV)"):
+    if os.path.exists('historial_creditos.csv'):
+        historial_df = pd.read_csv('historial_creditos.csv')
+        st.dataframe(historial_df)
+    else:
+        st.write("Aún no hay registros guardados.")
 
 
 # ------------------------------------------------------
