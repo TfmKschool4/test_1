@@ -455,51 +455,7 @@ def page_credit_request():
     # -------------------------
     # CASO 2: MÚLTIPLE (TABLA)
     # -------------------------
-    with tab2:
-        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.2rem;'>Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.</p>", unsafe_allow_html=True)
-
-        # Configuración de columnas para el editor
-        column_config = {
-            "SK_ID_CURR": st.column_config.NumberColumn("ID Solicitante", min_value=0, step=1, format="%d"),
-            "NAME": st.column_config.TextColumn("Nombre"),
-            "AGE": st.column_config.NumberColumn("Edad", min_value=18, max_value=100),
-            "GENDER": st.column_config.SelectboxColumn("Género", options=['Masculino', 'Femenino'], required=True),
-            "CNT_CHILDREN": st.column_config.SelectboxColumn("Hijos", options=['0','1', '2', '3', '4 o más'], required=True),
-            "EDUCATION": st.column_config.SelectboxColumn("Educación", options=['Lower secondary', 'Secondary / secondary special', 'Incomplete higher', 'Higher education', 'Academic degree'], required=True),
-            "FAMILY_STATUS": st.column_config.SelectboxColumn("Estado Civil", options=['Married', 'Single / not married', 'Civil marriage', 'Separated', 'Widow'], required=True),
-            "HOUSING": st.column_config.SelectboxColumn("Vivienda", options=['With parents', 'Rented apartment', 'House / apartment', 'Municipal apartment', 'Office apartment', 'Co-op apartment'], required=True),
-            "INCOME_TYPE": st.column_config.SelectboxColumn("Fuente Ingresos", options=['Working', 'State servant', 'Commercial associate', 'Businessman', 'Maternity leave', 'Student', 'Unemployed', 'Pensioner'], required=True),
-            "AMT_INCOME": st.column_config.NumberColumn("Ingresos", min_value=0),
-            "AMT_CREDIT": st.column_config.NumberColumn("Crédito", min_value=0),
-            "YEARS_WORKED": st.column_config.NumberColumn("Años Trabajados", min_value=0),
-            "OWN_REALTY": st.column_config.CheckboxColumn("Casa Propia"),
-            "OWN_CAR": st.column_config.CheckboxColumn("Coche Propio"),
-            # Simplificamos algunos flags documentales para que la tabla no sea kilométrica, 
-            # asumiendo True por defecto o añadiendo solo los críticos. Añade más si es necesario.
-            "FLAG_PHONE": st.column_config.CheckboxColumn("Teléfono"),
-            "FLAG_DNI": st.column_config.CheckboxColumn("DNI"),
-            "FLAG_PASAPORTE": st.column_config.CheckboxColumn("Pasaporte"),
-            "FLAG_CERTIFICADO_LABORAL": st.column_config.CheckboxColumn("Cert. Laboral"),
-            "FLAG_COMPROBANTE_DOM_FISCAL": st.column_config.CheckboxColumn("Comp. Domicilio"),
-            "FLAG_ESTADO_CUENTA_BANC": st.column_config.CheckboxColumn("Estado Cuenta"),
-            "FLAG_TARJETA_ID_FISCAL": st.column_config.CheckboxColumn("ID Fiscal")
-
-        }
-
-        # DataFrame plantilla
-        df_template = pd.DataFrame(columns=[
-    "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
-    "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
-    "YEARS_WORKED", "OWN_REALTY", "OWN_CAR",
-    "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
-    "FLAG_CERTIFICADO_LABORAL", "FLAG_COMPROBANTE_DOM_FISCAL",
-    "FLAG_ESTADO_CUENTA_BANC", "FLAG_TARJETA_ID_FISCAL"
-    ])
-
-        edited_df = st.data_editor(df_template, num_rows="dynamic", column_config=column_config, use_container_width=True)
-
-        if st.button("Procesar Lista Completa"):
+if st.button("Procesar Lista Completa"):
             if edited_df.empty:
                 st.warning("La tabla está vacía.")
             else:
@@ -511,22 +467,13 @@ def page_credit_request():
                 labels = [1, 2, 3, 4]
 
                 for index, row in edited_df.iterrows():
-                    # Preparar datos fila por fila
                     try:
-                        # 1. Mapeos básicos
-                        age_bin = pd.cut([row['AGE']], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
-                        raw_input = {
-                        'FLAG_PHONE': row['FLAG_PHONE'],
-                        'FLAG_DNI': row['FLAG_DNI'],
-                        'FLAG_PASAPORTE': row['FLAG_PASAPORTE'],
-                        'FLAG_CERTIFICADO_LABORAL': row['FLAG_CERTIFICADO_LABORAL'],
-                        'FLAG_COMPROBANTE_DOM_FISCAL': row['FLAG_COMPROBANTE_DOM_FISCAL'],
-                        'FLAG_ESTADO_CUENTA_BANC': row['FLAG_ESTADO_CUENTA_BANC'],
-                        'FLAG_TARJETA_ID_FISCAL': row['FLAG_TARJETA_ID_FISCAL'],
-                        }
-
+                        # 1. Mapeos básicos y validación de edad
+                        age_val = row['AGE'] if pd.notnull(row['AGE']) else 18
+                        age_bin = pd.cut([age_val], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
                         
-                        # Construir diccionario solicitante (misma lógica que individual)
+                        # 2. Construir diccionario solicitante (Para el modelo)
+                        # Usamos int(row['COL']) para los checkboxes porque el modelo suele esperar 0 o 1
                         d = {
                             'SK_ID_CURR': int(row['SK_ID_CURR']),
                             'NAME': row['NAME'],
@@ -537,15 +484,19 @@ def page_credit_request():
                             'LEVEL_EDUCATION_TYPE': maps['education'][row['EDUCATION']],
                             'AMT_INCOME_TOTAL': float(row['AMT_INCOME']),
                             'AMT_CREDIT': float(row['AMT_CREDIT']),
-                            'YEARS_ACTUAL_WORK': float(row['YEARS_WORKED']) if pd.notnull(row['YEARS_WORKED']) else np.nan,
-                            'FLAG_OWN_CAR': int(row['OWN_CAR']), 'FLAG_OWN_REALTY': int(row['OWN_REALTY']),
-                            # Asumimos que si marcó "Docs OK", tiene todo. Si no, ajustar según necesidad.
-                            'FLAG_PHONE': 1, 'FLAG_DNI': docs_ok, 'FLAG_PASAPORTE': docs_ok, 
-                            'FLAG_COMPROBANTE_DOM_FISCAL': docs_ok, 'FLAG_ESTADO_CUENTA_BANC': docs_ok, 
-                            'FLAG_TARJETA_ID_FISCAL': docs_ok, 'FLAG_CERTIFICADO_LABORAL': docs_ok
+                            'YEARS_ACTUAL_WORK': float(row['YEARS_WORKED']) if pd.notnull(row['YEARS_WORKED']) else 0.0,
+                            'FLAG_OWN_CAR': int(row['OWN_CAR']), 
+                            'FLAG_OWN_REALTY': int(row['OWN_REALTY']),
+                            'FLAG_PHONE': int(row['FLAG_PHONE']), 
+                            'FLAG_DNI': int(row['FLAG_DNI']), 
+                            'FLAG_PASAPORTE': int(row['FLAG_PASAPORTE']), 
+                            'FLAG_COMPROBANTE_DOM_FISCAL': int(row['FLAG_COMPROBANTE_DOM_FISCAL']), 
+                            'FLAG_ESTADO_CUENTA_BANC': int(row['FLAG_ESTADO_CUENTA_BANC']), 
+                            'FLAG_TARJETA_ID_FISCAL': int(row['FLAG_TARJETA_ID_FISCAL']), 
+                            'FLAG_CERTIFICADO_LABORAL': int(row['FLAG_CERTIFICADO_LABORAL'])
                         }
 
-                        # OHE Family (Lógica simplificada para tabla)
+                        # 3. OHE Family y Housing (Igual que tenías, pero asegurando los nombres)
                         fs = row['FAMILY_STATUS']
                         d['FAMILY_STATUS_Single_or_not_married'] = 1 if fs == 'Single / not married' else 0
                         d['FAMILY_STATUS_Married'] = 1 if fs == 'Married' else 0
@@ -553,7 +504,6 @@ def page_credit_request():
                         d['FAMILY_STATUS_Separated'] = 1 if fs == 'Separated' else 0
                         d['FAMILY_STATUS_Widow'] = 1 if fs == 'Widow' else 0
 
-                        # OHE Housing
                         ht = row['HOUSING']
                         d['HOUSING_TYPE_House_or_apartment'] = 1 if ht == 'House / apartment' else 0
                         d['HOUSING_TYPE_Co_op_apartment'] = 1 if ht == 'Co-op apartment' else 0
@@ -569,28 +519,17 @@ def page_credit_request():
                         d['INCOME_TYPE_Baja_Estabilidad'] = 1 if it in ['Maternity leave', 'Student', 'Unemployed'] else 0
                         d['INCOME_TYPE_Pensionista'] = 1 if it == 'Pensioner' else 0
 
-                        # Raw data para supabase
-                        raw_input = {
-                            'SK_ID_CURR': row['SK_ID_CURR'], 'NAME': row['NAME'], 'GENDER': row['GENDER'], 
-                            'AGE': row['AGE'], 'CNT_CHILDREN_MAPPED': maps['children'][str(row['CNT_CHILDREN'])],
-                            'NAME_EDUCATION_TYPE': row['EDUCATION'], 'FAMILY_STATUS': fs,
-                            'HOUSING_TYPE': ht, 'INCOME_TYPE': it,
-                            'AMT_INCOME_TOTAL': row['AMT_INCOME'], 'AMT_CREDIT': row['AMT_CREDIT'],
-                            'YEARS_ACTUAL_WORK': row['YEARS_WORKED'],
-                            'FLAG_OWN_REALTY': row['OWN_REALTY'], 'FLAG_OWN_CAR': row['OWN_CAR'],
-                            'FLAG_PHONE': 1, 'FLAG_DNI': docs_ok, 'FLAG_PASAPORTE': docs_ok,
-                            'FLAG_COMPROBANTE_DOM_FISCAL': docs_ok, 'FLAG_ESTADO_CUENTA_BANC': docs_ok,
-                            'FLAG_TARJETA_ID_FISCAL': docs_ok, 'FLAG_CERTIFICADO_LABORAL': docs_ok
-                        }
+                        # 4. Raw data para guardar (Se usa para el historial CSV)
+                        raw_input_data = d.copy() # Simplificamos usando d o mapeando strings de nuevo
 
-                        # Predecir
-                        pred, _ = process_single_prediction(d, raw_input)
+                        # 5. Predecir
+                        pred, _ = process_single_prediction(d, raw_input_data)
                         
-                        status = "✅ Aprobado" if pred == 0 else "❌ Denegado" if pred == 1 else "⚠️ ID no encontrado"
+                        status = "✅ Aprobado" if pred == 0 else "❌ Denegado" if pred == 1 else "⚠️ Error ID"
                         results_log.append({"ID": row['SK_ID_CURR'], "Nombre": row['NAME'], "Resultado": status})
                     
                     except Exception as e:
-                        results_log.append({"ID": row['SK_ID_CURR'], "Nombre": row['NAME'], "Resultado": f"Error: {str(e)}"})
+                        results_log.append({"ID": row.get('SK_ID_CURR', 'N/A'), "Nombre": row.get('NAME', 'N/A'), "Resultado": f"Error: {str(e)}"})
 
                     progress_bar.progress((index + 1) / len(edited_df))
                 
