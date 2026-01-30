@@ -14,6 +14,8 @@ st.set_page_config(page_title="Creditum", layout="wide")
 # Función para cargar recursos (con caché para no recargar en cada interacción)
 @st.cache_resource
 def load_resources():
+    st.write("Modelo cargado:", model_final is not None)
+    st.write("Datos internos cargados:", datos_internos_df is not None)
     # Cargar Modelo
     try:
         with open('model_final.pkl', 'rb') as file:
