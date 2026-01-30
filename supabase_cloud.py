@@ -168,10 +168,9 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS ESTILO REFINADO ---
+    # --- 1. CSS ESTILO REFINADO (Mantenemos tu estilo y añadimos centrado de botones) ---
     st.markdown("""
     <style>
-    /* FONDO DE PANTALLA */
     [data-testid="stAppViewContainer"] {
         background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
@@ -180,57 +179,72 @@ def page_home():
         background-attachment: fixed;
     }
 
-    /* CAPA OSCURA SUAVE */
-    [data-testid="stAppViewContainer"]::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.25); 
-        z-index: -1;
-    }
-
-    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
     .header-box {
         background-color: rgba(255, 255, 255, 0.96);
         border-radius: 20px;
         padding: 40px 20px;
         margin: 20px auto;
-        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
+        max-width: 650px; 
         box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         text-align: center;
         border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
-    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        max-width: 100px; /* Tamaño reducido según tu petición */
+        max-width: 100px;
         height: auto;
         margin-bottom: 15px;
-        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
     }
 
     .custom-title {
-        color: #111827 !important; /* Un gris casi negro muy elegante */
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+        color: #111827 !important;
+        font-family: 'Inter', sans-serif;
         font-weight: 800;
         font-size: 2.8rem;
         margin: 0;
-        letter-spacing: -0.5px;
     }
 
-    .custom-subtitle {
-        color: #4B5563 !important; /* Gris suave */
-        font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-top: 5px;
+    /* Estilo para centrar la columna de botones */
+    .stButton button {
+        margin: 0 auto;
+        display: block;
     }
     </style>
     """, unsafe_allow_html=True)
 
+    # --- 2. LÓGICA DE IMAGEN ---
+    img_b64 = get_base64_image("logo.png") 
+    logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">' if img_b64 else ""
+
+    # --- 3. RENDERIZADO DEL HEADER ---
+    st.markdown(f"""
+    <div class="header-box">
+        {logo_html}
+        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- 4. BOTONES DE ACCIÓN (DISPOSICIÓN VERTICAL Y CENTRADA) ---
+    # Creamos 3 columnas y usamos la del centro para apilar los elementos
+    col_left, col_center, col_right = st.columns([1, 2, 1])
+
+    with col_center:
+        # BOTÓN 1: EVALUACIÓN (ARRIBA)
+        with st.container(border=True):
+            st.markdown("<h3 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
+            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
+                go_to_page("request")
+                st.rerun()
+
+        # Espacio pequeño entre tarjetas
+        st.write("") 
+
+        # BOTÓN 2: SOBRE NOSOTROS (ABAJO)
+        with st.container(border=True):
+            st.markdown("<h3 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
+            if st.button("👥 Quiénes Somos", use_container_width=True):
+                go_to_page("about")
+                st.rerun()
     # --- 2. LÓGICA DE IMAGEN ---
     import base64
     
