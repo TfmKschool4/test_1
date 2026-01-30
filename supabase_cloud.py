@@ -56,35 +56,35 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
     
     if datos_completos.empty:
-        return None, "ID no encontrado en base interna (Bureau)", False, "No procesado"
+        return None, "ID no encontrado en base interna (Bureau)"
 
-    # Seleccionar columnas del modelo (igual que antes)
-    columnas_modelo = [
-        'SK_ID_CURR', 'NAME', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'CNT_CHILDREN',
-        'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'LEVEL_EDUCATION_TYPE', 'AGE_BINS',
-        'YEARS_ACTUAL_WORK', 'FLAG_PHONE', 'DEF_30_CNT_SOCIAL_CIRCLE',
-        'FLAG_COMPROBANTE_DOM_FISCAL', 'FLAG_ESTADO_CUENTA_BANC', 'FLAG_PASAPORTE',
-        'FLAG_TARJETA_ID_FISCAL', 'FLAG_DNI', 'FLAG_CERTIFICADO_LABORAL',
-        'GENDER_F', 'GENDER_M', 'INCOME_TYPE_Alta_Estabilidad',
-        'INCOME_TYPE_Baja_Estabilidad', 'INCOME_TYPE_Media_Estabilidad',
-        'INCOME_TYPE_Pensionista', 'FAMILY_STATUS_Civil_marriage',
-        'FAMILY_STATUS_Married', 'FAMILY_STATUS_Separated',
-        'FAMILY_STATUS_Single_or_not_married', 'FAMILY_STATUS_Widow',
-        'HOUSING_TYPE_Co_op_apartment', 'HOUSING_TYPE_House_or_apartment',
-        'HOUSING_TYPE_Municipal_apartment', 'HOUSING_TYPE_Office_apartment',
-        'HOUSING_TYPE_Rented_apartment', 'HOUSING_TYPE_With_parents'
-    ]
-    
-    datos_completos = datos_completos[columnas_modelo]
-    
+    # Columnas del modelo (sin ID ni NAME)
+    columnas_modelo = list(model_final.feature_names_in_)
+
+    # Construir X asegurando compatibilidad total con el modelo
+    X = datos_completos.copy()
+
+    # Eliminar columnas que el modelo no usa
+    for col in ['SK_ID_CURR', 'NAME']:
+        if col in X.columns:
+            X = X.drop(col, axis=1)
+
+    # Añadir columnas faltantes
+    for col in columnas_modelo:
+        if col not in X.columns:
+            X[col] = 0
+
+    # Eliminar columnas extra y ordenar
+    X = X[columnas_modelo]
+
     # Predicción
-    X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
     prediction = model_final.predict(X)[0]
-    
-    # --- AQUÍ LLAMAMOS A LA NUEVA FUNCIÓN CSV ---
-    saved_success, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
-    
-    return prediction, datos_completos, saved_success, saved_msg
+
+    # Guardado en CSV
+    saved_ok, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
+
+    return prediction, datos_completos
+
 # ------------------------------------------------------
 # FUNCIÓN DE GUARDADO EN CSV (REEMPLAZA A SUPABASE)
 # ------------------------------------------------------
