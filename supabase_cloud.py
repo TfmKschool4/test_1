@@ -140,7 +140,7 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS ESTILO REFINADO ---
+# --- 1. CSS ESTILO REFINADO ---
     st.markdown("""
     <style>
     /* FONDO DE PANTALLA */
@@ -152,44 +152,34 @@ def page_home():
         background-attachment: fixed;
     }
 
-    /* CAPA OSCURA SUAVE */
-    [data-testid="stAppViewContainer"]::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.25); 
-        z-index: -1;
-    }
-
-    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
+    /* CONTENEDOR PRINCIPAL (Efecto Cristal Transparente) */
     .header-box {
-        background-color: rgba(255, 255, 255, 0.96);
+        background-color: rgba(255, 255, 255, 0.7); /* Reducimos la opacidad a 0.7 */
+        backdrop-filter: blur(10px); /* Esto crea el efecto de vidrio esmerilado */
+        -webkit-backdrop-filter: blur(10px); 
         border-radius: 20px;
         padding: 40px 20px;
         margin: 20px auto;
         max-width: 650px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra más sutil */
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3); /* Borde suave */
     }
 
     .logo-img {
-        max-width: 100px;
+        max-width: 120px;
         height: auto;
         margin-bottom: 15px;
-        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
+        /* Quitamos el filtro pesado para que se vea limpio */
     }
 
     .custom-title {
-        color: #111827 !important;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+        color: #000000 !important; /* Negro puro para máximo contraste sobre el cristal */
+        font-family: 'Inter', sans-serif;
         font-weight: 800;
-        font-size: 2.8rem;
+        font-size: 2.5rem;
         margin: 0;
-        letter-spacing: -0.5px;
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.5); /* Sutil relieve */
     }
     </style>
     """, unsafe_allow_html=True)
