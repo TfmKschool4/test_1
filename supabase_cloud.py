@@ -226,21 +226,35 @@ def page_home():
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    st.title("Sobre Nosotros")
+    
+    # Título más grande
+    st.markdown("<h1 style='font-size: 3rem;'>Sobre Nosotros</h1>", unsafe_allow_html=True)
 
-    # 🔽 MODIFICADO: TEXTO CORPORATIVO
+    # Contenedor con tamaño de letra personalizado
+    # Ajusta '22px' al tamaño que prefieras
     st.markdown("""
-    Somos una plataforma especializada en **analítica avanzada y evaluación de riesgo crediticio**, diseñada para apoyar la toma de decisiones financieras mediante el uso de **modelos predictivos**.
-
-    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el objetivo de **estimar la probabilidad de impago** de un solicitante y proporcionar recomendaciones objetivas, consistentes y escalables para la concesión de crédito.
-
-    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo tanto el análisis **individual** como el **procesamiento masivo de solicitudes**, con trazabilidad de resultados y almacenamiento histórico de decisiones.
-
-    Creemos en el uso responsable de la tecnología para impulsar **decisiones financieras más inteligentes, eficientes y basadas en datos**, reduciendo la incertidumbre y mejorando la gestión del riesgo.
-
-    > *La tecnología al servicio de decisiones financieras más seguras y eficientes.*
-    """)
-    #  - Opcional
+    <div style="font-size: 22px; line-height: 1.6; text-align: justify;">
+    
+    Somos una plataforma especializada en <b>analítica avanzada y evaluación de riesgo crediticio</b>, 
+    diseñada para apoyar la toma de decisiones financieras mediante el uso de <b>modelos predictivos</b>.
+    <br><br>
+    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el 
+    objetivo de <b>estimar la probabilidad de impago</b> de un solicitante y proporcionar recomendaciones 
+    objetivas, consistentes y escalables para la concesión de crédito.
+    <br><br>
+    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo 
+    tanto el análisis <b>individual</b> como el <b>procesamiento masivo de solicitudes</b>, con 
+    trazabilidad de resultados y almacenamiento histórico de decisiones.
+    <br><br>
+    Creemos en el uso responsable de la tecnología para impulsar <b>decisiones financieras más 
+    inteligentes, eficientes y basadas en datos</b>, reduciendo la incertidumbre y mejorando la gestión del riesgo.
+    
+    <blockquote style="font-size: 24px; font-style: italic; border-left: 5px solid #ff4b4b; padding-left: 15px; margin-top: 20px;">
+    "La tecnología al servicio de decisiones financieras más seguras y eficientes."
+    </blockquote>
+    
+    </div>
+    """, unsafe_allow_html=True)
 
 def page_credit_request():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
