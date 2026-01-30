@@ -84,7 +84,9 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     # --- AQUÍ LLAMAMOS A LA NUEVA FUNCIÓN CSV ---
     saved_success, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
     
-    return prediction, datos_completos, saved_success, saved_msg
+    pred, details, saved_ok, saved_msg = process_single_prediction(datos_solicitante, raw_input_data)
+    st.info(saved_msg)
+
 # ------------------------------------------------------
 # FUNCIÓN DE GUARDADO EN CSV (REEMPLAZA A SUPABASE)
 # ------------------------------------------------------
