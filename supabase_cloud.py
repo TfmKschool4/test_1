@@ -58,6 +58,13 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     if datos_completos.empty:
         return None, "ID no encontrado en base interna (Bureau)"
 
+    proba_default = model_final.predict_proba(X)[0][1]
+    if proba_default < 0.3:
+    st.success(f"✅ CRÉDITO APROBADO (Riesgo Bajo – {proba_default:.1%})")
+    else:
+    st.error(f"❌ CRÉDITO DENEGADO (Riesgo Alto – {proba_default:.1%})")
+
+    
     # Columnas del modelo (sin ID ni NAME)
     columnas_modelo = list(model_final.feature_names_in_)
 
