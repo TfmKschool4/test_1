@@ -177,7 +177,7 @@ def page_home():
         color: #000000 !important; /* Negro puro para máximo contraste sobre el cristal */
         font-family: 'Inter', sans-serif;
         font-weight: 800;
-        font-size: 2.5rem;
+        font-size: 3.5rem;
         margin: 0;
         text-shadow: 1px 1px 2px rgba(255,255,255,0.5); /* Sutil relieve */
     }
@@ -199,7 +199,7 @@ def page_home():
     st.markdown(f"""
     <div class="header-box">
         {logo_html}
-        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
+        <h2 class="custom-title">Análisis inteligente del riesgo crediticio</h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -210,7 +210,7 @@ def page_home():
     with col_center:
         # BLOQUE 1: EVALUACIÓN (Arriba)
         with st.container(border=True):
-            st.markdown("<h3 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
@@ -219,7 +219,7 @@ def page_home():
 
         # BLOQUE 2: SOBRE NOSOTROS (Debajo)
         with st.container(border=True):
-            st.markdown("<h3 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
