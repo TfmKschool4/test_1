@@ -209,10 +209,6 @@ def page_home():
     }
     </style>
 
-    .stButton button p {
-        font-size: 1.8rem !important;
-        font-weight: bold !important;
-    }
     .stButton button {
         height: 4.5rem !important;
     }
