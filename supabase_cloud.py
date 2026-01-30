@@ -170,42 +170,31 @@ def page_home():
         border-radius: 20px;
         padding: 40px 20px;
         margin: 20px auto;
-        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
+        max-width: 650px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         text-align: center;
         border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
-    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        max-width: 100px; /* Tamaño reducido según tu petición */
+        max-width: 100px;
         height: auto;
         margin-bottom: 15px;
         filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
     }
 
     .custom-title {
-        color: #111827 !important; /* Un gris casi negro muy elegante */
+        color: #111827 !important;
         font-family: 'Inter', 'Segoe UI', sans-serif;
         font-weight: 800;
         font-size: 2.8rem;
         margin: 0;
         letter-spacing: -0.5px;
     }
-
-    .custom-subtitle {
-        color: #4B5563 !important; /* Gris suave */
-        font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-top: 5px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
     # --- 2. LÓGICA DE IMAGEN ---
-    import base64
-    
     def get_base64_image(image_path):
         try:
             with open(image_path, "rb") as img_file:
@@ -213,14 +202,8 @@ def page_home():
         except FileNotFoundError:
             return None
 
-    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
     img_b64 = get_base64_image("logo.png") 
-    
-    if img_b64:
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        # Fallback en caso de que no encuentre el archivo
-        logo_html = ""
+    logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">' if img_b64 else ""
 
     # --- 3. RENDERIZADO DEL HEADER ---
     st.markdown(f"""
@@ -230,21 +213,25 @@ def page_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
+    # --- 4. BOTONES DE ACCIÓN CENTRADOS Y APILADOS ---
+    # Usamos columnas para centrar el bloque de botones en el medio de la página
+    col_left, col_center, col_right = st.columns([1, 2, 1])
 
-    with col_action1:
+    with col_center:
+        # BLOQUE 1: EVALUACIÓN (Arriba)
         with st.container(border=True):
-            st.markdown("### 🏢 Sobre nosotros")
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-
-    with col_action2:
-        with st.container(border=True):
-            st.markdown("### 🚀 Evaluación")
+            st.markdown("<h3 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
+                st.rerun()
+        
+        st.markdown("<br>", unsafe_allow_html=True) # Espacio entre bloques
+
+        # BLOQUE 2: SOBRE NOSOTROS (Debajo)
+        with st.container(border=True):
+            st.markdown("<h3 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
+            if st.button("👥 Quiénes Somos", use_container_width=True):
+                go_to_page("about")
                 st.rerun()
                 
 def page_about():
