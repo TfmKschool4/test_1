@@ -139,37 +139,12 @@ def go_to_page(page_name):
 import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPORTS
 import base64
 
+
 def page_home():
-    # --- 1. CARGA ROBUSTA DEL LOGO ---
-    def get_img_as_base64(file_path):
-        try:
-            with open(file_path, "rb") as f:
-                data = f.read()
-            return base64.b64encode(data).decode()
-        except Exception as e:
-            return None
-
-    # Construir la ruta exacta al archivo basada en la ubicación de ESTE script
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(current_dir, "logo.png")
-    
-    # Intentar cargar
-    img_b64 = get_img_as_base64(logo_path)
-    
-    # Lógica de visualización o error
-    if img_b64:
-        # Si se cargó bien, creamos la etiqueta HTML
-        img_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        # SI NO FUNCIONA: Esto te dirá por qué en la pantalla
-        img_html = "" 
-        st.error(f"⚠️ ERROR: No encuentro el archivo 'logo.png'.")
-        st.warning(f"El sistema está buscando aquí: {logo_path}")
-        st.info("Asegúrate de que el archivo se llame exactamente 'logo.png' y esté junto al archivo .py")
-
-    # --- 2. CSS ---
+    # --- 1. CSS ESTILO MEJORADO ---
     st.markdown("""
     <style>
+    /* FONDO DE PANTALLA */
     [data-testid="stAppViewContainer"] {
         background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
@@ -177,87 +152,98 @@ def page_home():
         background-repeat: no-repeat;
         background-attachment: fixed;
     }
-    
+
+    /* CAPA OSCURA SUAVE */
     [data-testid="stAppViewContainer"]::before {
         content: "";
         position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.1);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.2); 
         z-index: -1;
     }
 
+    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
     .header-box {
         background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 40px;
-        margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        border-radius: 25px;
+        padding: 50px 20px;
+        margin: 20px auto;
+        max-width: 800px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
+    /* ESTILO DEL LOGO */
     .logo-img {
-        max-width: 200px;  /* Hice el logo un poco más grande */
-        width: 100%;       /* Asegura que se vea en móviles */
-        height: auto;
+        max-width: 180px; /* Ajusta el tamaño según prefieras */
         margin-bottom: 20px;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
+        filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.2)); /* Sombra para dar relieve */
     }
 
     .custom-title {
-        color: #000000 !important;
-        font-family: 'Helvetica Neue', sans-serif;
+        color: #1E1E1E !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-weight: 800;
-        font-size: 3rem;
+        font-size: 3.5rem;
         margin: 0;
+        letter-spacing: -1px;
     }
 
     .custom-subtitle {
-        color: #141414 !important;
-        font-family: 'Helvetica Neue', sans-serif;
-        font-size: 1.2rem;
-        font-weight: 500;
+        color: #555555 !important;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 300;
+        margin-top: 10px;
     }
-
-    /* Estilos adicionales para textos y botones */
-    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 10px;
-        padding: 20px;
+    
+    /* BOTONES */
+    .stButton > button {
+        border-radius: 12px;
+        transition: all 0.3s ease;
     }
-    h3 { color: #000000 !important; font-weight: 900 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 3. RENDERIZADO DEL HEADER ---
+    # --- 2. CONTENIDO CON LOGO ---
+    # Nota: Asegúrate de que 'logo.png' esté en la misma carpeta que el script.
+    # Usamos base64 para inyectar la imagen directamente en el HTML del box
+    import base64
+    
+    def get_base64_image(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+
+    try:
+        img_base64 = get_base64_image("logo.png")
+        logo_html = f'<img src="data:image/png;base64,{img_base64}" class="logo-img">'
+    except:
+        logo_html = "" # Si no encuentra la imagen, no muestra nada o puedes poner un icono
+
     st.markdown(f"""
     <div class="header-box">
-        {img_html}
+        {logo_html}
         <h1 class="custom-title">Creditum</h1>
-        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
+        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio para decisiones financieras seguras.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
+    # --- 3. BOTONES DE ACCIÓN ---
+    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([1, 2, 2, 1])
 
     with col_action1:
-        with st.container(border=True):
-            st.markdown("### 🏢 Sobre nosotros")
-            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
+        if st.button("👥 Quiénes Somos", use_container_width=True):
+            go_to_page("about")
+            st.rerun()
 
     with col_action2:
-        with st.container(border=True):
-            st.markdown("### 🚀 Evaluación")
-            st.success("Scoring individual o masivo en tiempo real.")
-            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
-
+        if st.button("🚀 Solicitar Crédito", use_container_width=True, type="primary"):
+            go_to_page("request")
+            st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
