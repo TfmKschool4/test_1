@@ -140,7 +140,7 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-# --- 1. CSS ESTILO REFINADO ---
+    # --- 1. CSS ESTILO REFINADO ---
     st.markdown("""
     <style>
     /* FONDO DE PANTALLA */
@@ -152,47 +152,60 @@ def page_home():
         background-attachment: fixed;
     }
 
-    /* CONTENEDOR PRINCIPAL (Efecto Cristal Transparente) */
+    /* CAPA OSCURA SUAVE */
+    [data-testid="stAppViewContainer"]::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.25); 
+        z-index: -1;
+    }
+
+    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
     .header-box {
-        background-color: rgba(255, 255, 255, 0.7); /* Reducimos la opacidad a 0.7 */
-        backdrop-filter: blur(10px); /* Esto crea el efecto de vidrio esmerilado */
-        -webkit-backdrop-filter: blur(10px); 
+        background-color: rgba(255, 255, 255, 0.96);
         border-radius: 20px;
         padding: 40px 20px;
         margin: 20px auto;
-        max-width: 650px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra más sutil */
+        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.3); /* Borde suave */
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
+    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        max-width: 120px;
+        max-width: 100px; /* Tamaño reducido según tu petición */
         height: auto;
         margin-bottom: 15px;
-        /* Quitamos el filtro pesado para que se vea limpio */
+        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
     }
 
     .custom-title {
-        color: #000000 !important; /* Negro puro para máximo contraste sobre el cristal */
-        font-family: 'Inter', sans-serif;
+        color: #111827 !important; /* Un gris casi negro muy elegante */
+        font-family: 'Inter', 'Segoe UI', sans-serif;
         font-weight: 800;
-        font-size: 3.5rem;
+        font-size: 2.8rem;
         margin: 0;
-        text-shadow: 1px 1px 2px rgba(255,255,255,0.5); /* Sutil relieve */
+        letter-spacing: -0.5px;
+    }
+
+    .custom-subtitle {
+        color: #4B5563 !important; /* Gris suave */
+        font-family: 'Inter', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin-top: 5px;
     }
     </style>
-
-    .stButton button p {
-        font-size: 1.8rem !important;
-        font-weight: bold !important;
-    }
-    .stButton button {
-        height: 4.5rem !important;
-    }
     """, unsafe_allow_html=True)
 
     # --- 2. LÓGICA DE IMAGEN ---
+    import base64
+    
     def get_base64_image(image_path):
         try:
             with open(image_path, "rb") as img_file:
@@ -200,99 +213,61 @@ def page_home():
         except FileNotFoundError:
             return None
 
+    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
     img_b64 = get_base64_image("logo.png") 
-    logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">' if img_b64 else ""
+    
+    if img_b64:
+        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
+    else:
+        # Fallback en caso de que no encuentre el archivo
+        logo_html = ""
 
     # --- 3. RENDERIZADO DEL HEADER ---
     st.markdown(f"""
     <div class="header-box">
         {logo_html}
-        <h2 class="custom-title">Análisis inteligente del riesgo crediticio</h2>
+        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN CENTRADOS Y APILADOS ---
-    # Usamos columnas para centrar el bloque de botones en el medio de la página
-    col_left, col_center, col_right = st.columns([1, 2, 1])
+    # --- 4. BOTONES DE ACCIÓN ---
+    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
 
-    with col_center:
-        # BLOQUE 1: EVALUACIÓN (Arriba)
+    with col_action1:
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🚀 Evaluación</h2>", unsafe_allow_html=True)
-            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # BLOQUE 2: SOBRE NOSOTROS (Debajo)
-        with st.container(border=True):
-            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🏢 Sobre nosotros</h2>", unsafe_allow_html=True)
+            st.markdown("### 🏢 Sobre nosotros")
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
+                st.rerun()
+
+    with col_action2:
+        with st.container(border=True):
+            st.markdown("### 🚀 Evaluación")
+            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
+                go_to_page("request")
                 st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    
-    # Título más grande
-    st.markdown("<h1 style='font-size: 3rem;'>Sobre Nosotros</h1>", unsafe_allow_html=True)
+    st.title("Sobre Nosotros")
 
-    # Contenedor con tamaño de letra personalizado
-    # Ajusta '22px' al tamaño que prefieras
+    # 🔽 MODIFICADO: TEXTO CORPORATIVO
     st.markdown("""
-    <div style="font-size: 22px; line-height: 1.6; text-align: justify;">
-    
-    Somos una plataforma especializada en <b>analítica avanzada y evaluación de riesgo crediticio</b>, 
-    diseñada para apoyar la toma de decisiones financieras mediante el uso de <b>modelos predictivos</b>.
-    <br><br>
-    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el 
-    objetivo de <b>estimar la probabilidad de impago</b> de un solicitante y proporcionar recomendaciones 
-    objetivas, consistentes y escalables para la concesión de crédito.
-    <br><br>
-    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo 
-    tanto el análisis <b>individual</b> como el <b>procesamiento masivo de solicitudes</b>, con 
-    trazabilidad de resultados y almacenamiento histórico de decisiones.
-    <br><br>
-    Creemos en el uso responsable de la tecnología para impulsar <b>decisiones financieras más 
-    inteligentes, eficientes y basadas en datos</b>, reduciendo la incertidumbre y mejorando la gestión del riesgo.
-    
-    <blockquote style="font-size: 24px; font-style: italic; border-left: 5px solid #ff4b4b; padding-left: 15px; margin-top: 20px;">
-    "La tecnología al servicio de decisiones financieras más seguras y eficientes."
-    </blockquote>
-    
-    </div>
-    """, unsafe_allow_html=True)
+    Somos una plataforma especializada en **analítica avanzada y evaluación de riesgo crediticio**, diseñada para apoyar la toma de decisiones financieras mediante el uso de **modelos predictivos**.
+
+    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el objetivo de **estimar la probabilidad de impago** de un solicitante y proporcionar recomendaciones objetivas, consistentes y escalables para la concesión de crédito.
+
+    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo tanto el análisis **individual** como el **procesamiento masivo de solicitudes**, con trazabilidad de resultados y almacenamiento histórico de decisiones.
+
+    Creemos en el uso responsable de la tecnología para impulsar **decisiones financieras más inteligentes, eficientes y basadas en datos**, reduciendo la incertidumbre y mejorando la gestión del riesgo.
+
+    > *La tecnología al servicio de decisiones financieras más seguras y eficientes.*
+    """)
+    #  - Opcional
 
 def page_credit_request():
-    # --- CSS ESPECÍFICO PARA ESTA PÁGINA ---
-    st.markdown("""
-    <style>
-        /* Tamaño de los títulos de las pestañas (Tabs) */
-        button[data-baseweb="tab"] div {
-            font-size: 20px !important;
-        }
-        /* Tamaño de las etiquetas de los campos (Labels) */
-        label p {
-            font-size: 1.2rem !important;
-            font-weight: bold !important;
-        }
-        /* Tamaño del texto dentro de los campos de entrada */
-        input {
-            font-size: 1.1rem !important;
-        }
-        /* Tamaño del texto de los botones de esta página */
-        .stButton button {
-            font-size: 1.3rem !important;
-            height: 3em !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    
-    # Título principal aumentado
-    st.markdown("<h1 style='font-size: 3rem;'>Solicitud de Crédito</h1>", unsafe_allow_html=True)
+    st.title("Solicitud de Crédito")
 
     tab1, tab2 = st.tabs(["👤 Individual", "👥 Múltiples Solicitantes"])
 
@@ -300,8 +275,7 @@ def page_credit_request():
     # CASO 1: INDIVIDUAL
     # -------------------------
     with tab1:
-        # Subtítulo aumentado
-        st.markdown("<h2 style='font-size: 1.8rem;'>Formulario Individual</h2>", unsafe_allow_html=True)
+        st.subheader("Formulario Individual")
         
         # --- INPUTS (Código original adaptado) ---
         col1, col2 = st.columns(2)
@@ -437,8 +411,8 @@ def page_credit_request():
     # CASO 2: MÚLTIPLE (TABLA)
     # -------------------------
     with tab2:
-        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.2rem;'>Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.</p>", unsafe_allow_html=True)
+        st.subheader("Carga Masiva de Solicitudes")
+        st.info("Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.")
 
         # Configuración de columnas para el editor
         column_config = {
@@ -593,5 +567,4 @@ elif st.session_state.page == "about":
 elif st.session_state.page == "request":
     page_credit_request()
 elif st.session_state.page == "request":
-    page_credit_request()
     page_credit_request()
