@@ -257,8 +257,34 @@ def page_about():
     """, unsafe_allow_html=True)
 
 def page_credit_request():
+    # --- CSS ESPECÍFICO PARA ESTA PÁGINA ---
+    st.markdown("""
+    <style>
+        /* Tamaño de los títulos de las pestañas (Tabs) */
+        button[data-baseweb="tab"] div {
+            font-size: 20px !important;
+        }
+        /* Tamaño de las etiquetas de los campos (Labels) */
+        label p {
+            font-size: 1.2rem !important;
+            font-weight: bold !important;
+        }
+        /* Tamaño del texto dentro de los campos de entrada */
+        input {
+            font-size: 1.1rem !important;
+        }
+        /* Tamaño del texto de los botones de esta página */
+        .stButton button {
+            font-size: 1.3rem !important;
+            height: 3em !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    st.title("Solicitud de Crédito")
+    
+    # Título principal aumentado
+    st.markdown("<h1 style='font-size: 3rem;'>Solicitud de Crédito</h1>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["👤 Individual", "👥 Múltiples Solicitantes"])
 
@@ -266,7 +292,8 @@ def page_credit_request():
     # CASO 1: INDIVIDUAL
     # -------------------------
     with tab1:
-        st.subheader("Formulario Individual")
+        # Subtítulo aumentado
+        st.markdown("<h2 style='font-size: 1.8rem;'>Formulario Individual</h2>", unsafe_allow_html=True)
         
         # --- INPUTS (Código original adaptado) ---
         col1, col2 = st.columns(2)
@@ -402,8 +429,8 @@ def page_credit_request():
     # CASO 2: MÚLTIPLE (TABLA)
     # -------------------------
     with tab2:
-        st.subheader("Carga Masiva de Solicitudes")
-        st.info("Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.")
+        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.2rem;'>Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.</p>", unsafe_allow_html=True)
 
         # Configuración de columnas para el editor
         column_config = {
