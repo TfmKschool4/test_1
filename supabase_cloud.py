@@ -140,103 +140,76 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS DE ALTA GAMA (ESTÉTICA PREMIUM) ---
+    # --- 1. CONFIGURACIÓN DE ESTILO (Análisis de Datos & Scoring) ---
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-    /* FONDO DINÁMICO */
+    /* FONDO TEMÁTICO: DASHBOARD / DATA ANALYSIS */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
-                    url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop");
+        background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+                    url("https://images.unsplash.com/photo-1551288049-bbbda536639a?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
     }
 
-    /* ANIMACIÓN DE ENTRADA */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* CAJA PRINCIPAL GLASSMORPHISM */
+    /* CONTENEDOR CENTRAL MINIMALISTA */
     .main-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-radius: 30px;
-        padding: 60px 40px;
-        margin: 40px auto;
-        max-width: 700px;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 24px;
+        padding: 50px 40px;
+        margin: 60px auto;
+        max-width: 600px;
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        animation: fadeIn 1s ease-out;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* LOGO CON EFECTO PROFESIONAL */
-    .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 25px;
-    }
-
+    /* LOGO COMO ELEMENTO PRINCIPAL */
     .logo-img {
-        width: 85px; /* Tamaño optimizado y pequeño */
+        width: 220px; /* Tamaño un poco mayor ya que no hay texto de título */
         height: auto;
-        filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.1));
-        transition: transform 0.3s ease;
-    }
-    
-    .logo-img:hover {
-        transform: scale(1.05);
+        margin-bottom: 20px;
     }
 
-    /* TEXTOS */
-    .hero-title {
-        color: #0F172A !important;
-        font-family: 'Inter', sans-serif;
-        font-weight: 800;
-        font-size: 3.8rem;
-        margin: 0;
-        letter-spacing: -2px;
-        line-height: 1;
+    .divider {
+        width: 40px;
+        height: 3px;
+        background: #10B981; /* Verde éxito/finanzas */
+        margin: 20px auto;
+        border-radius: 10px;
     }
 
     .hero-subtitle {
-        color: #64748B !important;
+        color: #475569 !important;
         font-family: 'Inter', sans-serif;
-        font-size: 1.25rem;
+        font-size: 1.2rem;
         font-weight: 400;
-        margin-top: 15px;
-        max-width: 80% ;
-        margin-left: auto;
-        margin-right: auto;
+        line-height: 1.6;
+        margin-bottom: 0;
     }
 
-    /* LÍNEA DECORATIVA */
-    .divider {
-        width: 60px;
-        height: 4px;
-        background: linear-gradient(90deg, #10B981, #3B82F6);
-        margin: 30px auto;
-        border-radius: 2px;
-    }
-
-    /* AJUSTE DE BOTONES DE STREAMLIT */
+    /* ESTILO DE BOTONES ABAJO */
     div.stButton > button {
-        border-radius: 50px !important;
-        padding: 12px 24px !important;
+        background-color: white !important;
+        color: #1E293B !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 10px 20px !important;
         font-weight: 600 !important;
-        border: none !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.3s ease !important;
+    }
+
+    div.stButton > button:hover {
+        border-color: #10B981 !important;
+        color: #10B981 !important;
+        transform: translateY(-2px);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. LÓGICA DE LOGO ---
+    # --- 2. PROCESAMIENTO DEL LOGO ---
     import base64
     def get_base64_image(path):
         try:
@@ -245,13 +218,16 @@ def page_home():
         except: return None
 
     img_b64 = get_base64_image("logo.png")
-    logo_tag = f'<div class="logo-container"><img src="data:image/png;base64,{img_b64}" class="logo-img"></div>' if img_b64 else ""
+    
+    # --- 3. RENDERIZADO DE LA TARJETA ---
+    if img_b64:
+        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
+    else:
+        logo_html = "<h2>Logo</h2>" # Fallback
 
-    # --- 3. ESTRUCTURA VISUAL ---
     st.markdown(f"""
     <div class="main-card">
-        {logo_tag}
-        <h1 class="hero-title">Creditum</h1>
+        {logo_html}
         <div class="divider"></div>
         <p class="hero-subtitle">
             Plataforma de inteligencia predictiva para la evaluación de riesgo y gestión de carteras de crédito.
@@ -259,16 +235,14 @@ def page_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE NAVEGACIÓN ---
+    # --- 4. ACCIONES ---
     col1, col2, col3, col4 = st.columns([1, 1.5, 1.5, 1])
-    
     with col2:
         if st.button("📊 Quiénes Somos", use_container_width=True):
             go_to_page("about")
             st.rerun()
-            
     with col3:
-        if st.button("⚡ Iniciar Evaluación", use_container_width=True, type="primary"):
+        if st.button("⚡ Iniciar Evaluación", use_container_width=True):
             go_to_page("request")
             st.rerun()
                 
