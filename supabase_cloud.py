@@ -230,16 +230,22 @@ def page_home():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES ---
-    col1, col2, col3, col4 = st.columns([1, 1.5, 1.5, 1])
-    with col2:
-        if st.button("👥 Quiénes Somos", use_container_width=True):
-            go_to_page("about")
-            st.rerun()
-    with col3:
-        if st.button("🚀 Evaluación", use_container_width=True, type="primary"):
-            go_to_page("request")
-            st.rerun()
+    # --- 4. BOTONES DE ACCIÓN ---
+    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
+
+    with col_action1:
+        with st.container(border=True):
+            st.markdown("### 🏢 Sobre nosotros")
+            if st.button("👥 Quiénes Somos", use_container_width=True):
+                go_to_page("about")
+                st.rerun()
+
+    with col_action2:
+        with st.container(border=True):
+            st.markdown("### 🚀 Evaluación")
+            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
+                go_to_page("request")
+                st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
