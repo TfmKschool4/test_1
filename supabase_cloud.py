@@ -141,112 +141,127 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS ESTILO REFINADO ---
+    # --- 1. CSS ADAPTADO AL NUEVO FONDO (FONDO.JPG) ---
     st.markdown("""
     <style>
-    /* FONDO DE PANTALLA */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap');
+
+    /* CONFIGURACIÓN DEL FONDO CON TU IMAGEN FONDO.JPG */
     [data-testid="stAppViewContainer"] {
-        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
+        background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.75)), 
+                    url("https://raw.githubusercontent.com/tu-usuario/tu-repo/main/fondo.jpg"); /* O ruta local si st.image lo permite */
         background-size: cover;
         background-position: center;
-        background-repeat: no-repeat;
         background-attachment: fixed;
     }
 
-    /* CAPA OSCURA SUAVE */
-    [data-testid="stAppViewContainer"]::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.25); 
-        z-index: -1;
+    /* Si estás ejecutando localmente, usamos este truco para el fondo local */
+    [data-testid="stAppViewContainer"] {
+        background-image: url("data:image/jpg;base64," + base64_fondo + ");
+        background-size: cover;
     }
 
-    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
-    .header-box {
-        background-color: rgba(255, 255, 255, 0.96);
-        border-radius: 20px;
-        padding: 40px 20px;
-        margin: 20px auto;
-        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    /* CAJA PRINCIPAL (Cristal oscuro para que resalte el logo) */
+    .main-card {
+        background: rgba(30, 41, 59, 0.7); /* Slate oscuro con transparencia */
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 28px;
+        padding: 60px 40px;
+        margin: 40px auto;
+        max-width: 650px;
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
-    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        max-width: 100px; /* Tamaño reducido según tu petición */
+        width: 280px; /* Tamaño prominente */
         height: auto;
-        margin-bottom: 15px;
-        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
+        filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.3));
+        margin-bottom: 20px;
     }
 
-    .custom-title {
-        color: #111827 !important; /* Un gris casi negro muy elegante */
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        font-weight: 800;
-        font-size: 2.8rem;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-
-    .custom-subtitle {
-        color: #4B5563 !important; /* Gris suave */
+    /* TEXTO ADAPTADO AL FONDO OSCURO */
+    .hero-subtitle {
+        color: #E2E8F0 !important; /* Gris muy claro/azulado */
         font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-top: 5px;
+        font-size: 1.25rem;
+        font-weight: 300;
+        line-height: 1.6;
+        margin-top: 20px;
+    }
+
+    .tech-divider {
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #10B981, #3B82F6);
+        margin: 0 auto;
+        border-radius: 10px;
+    }
+
+    /* BOTONES ESTILO TECH */
+    div.stButton > button {
+        border-radius: 12px !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease !important;
+        font-weight: 600 !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: #10B981 !important;
+        border-color: #10B981 !important;
+        color: white !important;
+        transform: translateY(-2px);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. LÓGICA DE IMAGEN ---
-    import base64
-    
-    def get_base64_image(image_path):
+    # --- 2. LÓGICA DE CARGA DE IMÁGENES (LOGO Y FONDO) ---
+    def get_base64(path):
         try:
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode()
-        except FileNotFoundError:
-            return None
+            with open(path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+        except: return ""
 
-    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
-    img_b64 = get_base64_image("logo.png") 
-    
-    if img_b64:
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        # Fallback en caso de que no encuentre el archivo
-        logo_html = ""
+    base64_logo = get_base64("logo.jpg") # Cambiado a .jpg según tu archivo
+    base64_fondo = get_base64("fondo.jpg")
 
-    # --- 3. RENDERIZADO DEL HEADER ---
+    # Inyectar el fondo dinámicamente en el CSS
     st.markdown(f"""
-    <div class="header-box">
-        {logo_html}
-        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
+        <style>
+        [data-testid="stAppViewContainer"] {{
+            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+                        url("data:image/jpg;base64,{base64_fondo}");
+            background-size: cover;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
+    # --- 3. RENDERIZADO ---
+    st.markdown(f"""
+    <div class="main-card">
+        <img src="data:image/jpg;base64,{base64_logo}" class="logo-img">
+        <div class="tech-divider"></div>
+        <p class="hero-subtitle">
+            Análisis avanzado de riesgo y scoring crediticio mediante inteligencia de datos.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
-
-    with col_action1:
-        with st.container(border=True):
-            st.markdown("### 🏢 Sobre nosotros")
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-
-    with col_action2:
-        with st.container(border=True):
-            st.markdown("### 🚀 Evaluación")
-            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
+    # --- 4. ACCIONES ---
+    c1, c2, c3, c4 = st.columns([1, 1.5, 1.5, 1])
+    with c2:
+        if st.button("📊 Quiénes Somos", use_container_width=True):
+            go_to_page("about")
+            st.rerun()
+    with c3:
+        if st.button("⚡ Evaluación", use_container_width=True):
+            go_to_page("request")
+            st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
