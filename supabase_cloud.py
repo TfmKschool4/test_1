@@ -61,7 +61,7 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     proba_default = model_final.predict_proba(X)[0][1]
     if proba_default < 0.3:
     st.success(f"✅ CRÉDITO APROBADO (Riesgo Bajo – {proba_default:.1%})")
-    else:
+else:
     st.error(f"❌ CRÉDITO DENEGADO (Riesgo Alto – {proba_default:.1%})")
 
     
