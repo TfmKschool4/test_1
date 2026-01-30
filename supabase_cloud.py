@@ -140,76 +140,75 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CONFIGURACIÓN DE ESTILO (Análisis de Datos & Scoring) ---
+    # --- 1. CONFIGURACIÓN DE ESTILO (Finanzas & Big Data) ---
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-    /* FONDO TEMÁTICO: DASHBOARD / DATA ANALYSIS */
+    /* FONDO TEMÁTICO: ANÁLISIS FINANCIERO / BIG DATA */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+        background: linear-gradient(rgba(10, 20, 35, 0.85), rgba(10, 20, 35, 0.85)), 
                     url("https://images.unsplash.com/photo-1551288049-bbbda536639a?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
     }
 
-    /* CONTENEDOR CENTRAL MINIMALISTA */
+    /* TARJETA CENTRAL (GLASSMORPHISM REFINADO) */
     .main-card {
         background: rgba(255, 255, 255, 0.98);
-        border-radius: 24px;
-        padding: 50px 40px;
-        margin: 60px auto;
-        max-width: 600px;
+        border-radius: 28px;
+        padding: 60px 45px;
+        margin: 50px auto;
+        max-width: 620px;
         text-align: center;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    /* LOGO COMO ELEMENTO PRINCIPAL */
+    /* CONTENEDOR DEL LOGO */
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
     .logo-img {
-        width: 220px; /* Tamaño un poco mayor ya que no hay texto de título */
+        width: 240px; /* Tamaño destacado al ser la marca única */
         height: auto;
-        margin-bottom: 20px;
+        filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.1));
     }
 
-    .divider {
-        width: 40px;
-        height: 3px;
-        background: #10B981; /* Verde éxito/finanzas */
-        margin: 20px auto;
-        border-radius: 10px;
+    /* LÍNEA DECORATIVA TÉCNICA */
+    .tech-divider {
+        width: 50px;
+        height: 4px;
+        background: linear-gradient(90deg, #10B981, #3B82F6);
+        margin: 0 auto 25px auto;
+        border-radius: 2px;
     }
 
     .hero-subtitle {
         color: #475569 !important;
         font-family: 'Inter', sans-serif;
-        font-size: 1.2rem;
+        font-size: 1.25rem;
         font-weight: 400;
         line-height: 1.6;
-        margin-bottom: 0;
+        margin-bottom: 10px;
     }
 
-    /* ESTILO DE BOTONES ABAJO */
+    /* BOTONES ESTILO CORPORATIVO */
     div.stButton > button {
-        background-color: white !important;
-        color: #1E293B !important;
-        border: 1px solid #E2E8F0 !important;
         border-radius: 12px !important;
-        padding: 10px 20px !important;
+        padding: 12px 28px !important;
         font-weight: 600 !important;
+        font-family: 'Inter', sans-serif !important;
         transition: all 0.3s ease !important;
-    }
-
-    div.stButton > button:hover {
-        border-color: #10B981 !important;
-        color: #10B981 !important;
-        transform: translateY(-2px);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. PROCESAMIENTO DEL LOGO ---
+    # --- 2. CARGA DE LOGOTIPO ---
     import base64
     def get_base64_image(path):
         try:
@@ -219,30 +218,29 @@ def page_home():
 
     img_b64 = get_base64_image("logo.png")
     
-    # --- 3. RENDERIZADO DE LA TARJETA ---
-    if img_b64:
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        logo_html = "<h2>Logo</h2>" # Fallback
+    # --- 3. ESTRUCTURA DE LA PÁGINA ---
+    logo_html = f'<div class="logo-container"><img src="data:image/png;base64,{img_b64}" class="logo-img"></div>' if img_b64 else "<h2>Logo</h2>"
 
     st.markdown(f"""
     <div class="main-card">
         {logo_html}
-        <div class="divider"></div>
+        <div class="tech-divider"></div>
         <p class="hero-subtitle">
-            Plataforma de inteligencia predictiva para la evaluación de riesgo y gestión de carteras de crédito.
+            Soluciones avanzadas de <b>Credit Scoring</b> basadas en inteligencia de datos y modelos predictivos de riesgo.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. ACCIONES ---
-    col1, col2, col3, col4 = st.columns([1, 1.5, 1.5, 1])
-    with col2:
+    # --- 4. ACCIONES PRINCIPALES ---
+    col_spacer_l, col_btn1, col_btn2, col_spacer_r = st.columns([1, 1.6, 1.6, 1])
+    
+    with col_btn1:
         if st.button("📊 Quiénes Somos", use_container_width=True):
             go_to_page("about")
             st.rerun()
-    with col3:
-        if st.button("⚡ Iniciar Evaluación", use_container_width=True):
+            
+    with col_btn2:
+        if st.button("⚡ Iniciar Evaluación", use_container_width=True, type="primary"):
             go_to_page("request")
             st.rerun()
                 
