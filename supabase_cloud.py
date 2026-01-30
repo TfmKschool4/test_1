@@ -224,7 +224,6 @@ def page_home():
     with col_action2:
         with st.container(border=True):
             st.markdown("### 🚀 Evaluación")
-            st.success("Scoring individual o masivo en tiempo real.")
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
