@@ -210,16 +210,16 @@ def page_home():
     with col_center:
         # BLOQUE 1: EVALUACIÓN (Arriba)
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🚀 Evaluación</h2>", unsafe_allow_html=True)
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
         
-        st.markdown("<br>", unsafe_allow_html=True) # Espacio entre bloques
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # BLOQUE 2: SOBRE NOSOTROS (Debajo)
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🏢 Sobre nosotros</h2>", unsafe_allow_html=True)
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
