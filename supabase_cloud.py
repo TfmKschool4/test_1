@@ -48,7 +48,7 @@ model_final, datos_internos_df = load_resources()
 
 def process_single_prediction(datos_solicitante, raw_input_data):
     """
-    Procesa una única solicitud (diccionario pre-procesado), hace el merge, predice y guarda.
+    Procesa solicitud, predice y gestiona el guardado condicional.
     """
     df_datos = pd.DataFrame([datos_solicitante])
     
@@ -56,7 +56,8 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
     
     if datos_completos.empty:
-        return None, "ID no encontrado en base interna"
+        # Retornamos None en predicción y False en guardado
+        return None, "ID no encontrado en base interna (Bureau)", False, "No se pudo procesar"
 
     # Columnas requeridas por el modelo
     columnas_modelo = [
@@ -79,19 +80,34 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     
     # Predicción
     X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
-    prediction = model_final.predict(X)[0] # Tomamos el valor escalar
+    prediction = model_final.predict(X)[0]
     
-    # Guardar en Supabase
-    save_to_supabase(raw_input_data, datos_completos, prediction)
+    # Intentar guardar en Supabase (retorna exito/fallo y mensaje)
+    saved_success, saved_msg = save_to_supabase(raw_input_data, datos_completos, prediction)
     
-    return prediction, datos_completos
+    return prediction, datos_completos, saved_success, saved_msg
 
 def save_to_supabase(raw_data, datos_completos, prediction):
-    if not supabase: return
+    """
+    Intenta guardar en Supabase.
+    Retorna: (bool_exito, str_mensaje)
+    """
+    if not supabase: 
+        return False, "No hay conexión configurada con Supabase."
+
+    sk_id = int(raw_data['SK_ID_CURR'])
 
     try:
+        # 1. VERIFICACIÓN: Consultamos si el ID ya existe
+        existing_user = supabase.table('historical_loans').select("SK_ID_CURR").eq("SK_ID_CURR", sk_id).execute()
+        
+        # Si la lista de datos devuelta no está vacía, el ID ya existe
+        if existing_user.data and len(existing_user.data) > 0:
+            return False, f"El ID {sk_id} ya existe en la base de datos."
+
+        # 2. INSERCIÓN: Si no existe, procedemos a insertar
         new_loan_variables = {
-            'SK_ID_CURR': int(raw_data['SK_ID_CURR']),
+            'SK_ID_CURR': sk_id,
             'NAME': str(raw_data['NAME']),
             'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
             'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
@@ -114,10 +130,12 @@ def save_to_supabase(raw_data, datos_completos, prediction):
             'FLAG_CERTIFICADO_LABORAL': int(raw_data['FLAG_CERTIFICADO_LABORAL']),
             'TARGET': int(prediction)
         }
+        
         supabase.table('historical_loans').insert(new_loan_variables).execute()
-        # No mostramos success aquí para no saturar si es masivo, se maneja fuera
+        return True, "Registro guardado exitosamente."
+
     except Exception as e:
-        st.error(f"Error Supabase ID {raw_data['SK_ID_CURR']}: {e}")
+        return False, f"Error de conexión/guardado: {str(e)}"
 
 # Mapeos auxiliares para transformar texto a números/dummies
 def get_mappings():
