@@ -48,17 +48,17 @@ model_final, datos_internos_df = load_resources()
 
 def process_single_prediction(datos_solicitante, raw_input_data):
     """
-    Procesa una única solicitud (diccionario pre-procesado), hace el merge, predice y guarda.
+    Procesa solicitud, predice y gestiona el guardado en CSV.
     """
     df_datos = pd.DataFrame([datos_solicitante])
     
-    # Merge con datos internos
+    # Merge con datos internos (Bureau)
     datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
     
     if datos_completos.empty:
-        return None, "ID no encontrado en base interna"
+        return None, "ID no encontrado en base interna (Bureau)", False, "No procesado"
 
-    # Columnas requeridas por el modelo
+    # Seleccionar columnas del modelo (igual que antes)
     columnas_modelo = [
         'SK_ID_CURR', 'NAME', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'CNT_CHILDREN',
         'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'LEVEL_EDUCATION_TYPE', 'AGE_BINS',
@@ -79,46 +79,72 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     
     # Predicción
     X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
-    prediction = model_final.predict(X)[0] # Tomamos el valor escalar
+    prediction = model_final.predict(X)[0]
     
-    # Guardar en Supabase
-    save_to_supabase(raw_input_data, datos_completos, prediction)
+    # --- AQUÍ LLAMAMOS A LA NUEVA FUNCIÓN CSV ---
+    saved_success, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
     
-    return prediction, datos_completos
+    return prediction, datos_completos, saved_success, saved_msg
+# ------------------------------------------------------
+# FUNCIÓN DE GUARDADO EN CSV (REEMPLAZA A SUPABASE)
+# ------------------------------------------------------
 
-def save_to_supabase(raw_data, datos_completos, prediction):
-    if not supabase: return
+def save_to_csv(raw_data, datos_completos, prediction):
+    """
+    Guarda la predicción en un CSV local verificando duplicados.
+    Retorna: (bool_exito, str_mensaje)
+    """
+    filename = 'historial_creditos.csv'
+    current_id = int(raw_data['SK_ID_CURR'])
 
+    # 1. VERIFICAR SI EL ARCHIVO EXISTE Y LEERLO PARA BUSCAR DUPLICADOS
+    if os.path.exists(filename):
+        try:
+            # Leemos solo la columna ID para ser más rápidos
+            df_history = pd.read_csv(filename, usecols=['SK_ID_CURR'])
+            
+            # Chequeo de clave primaria (Si el ID ya está en la lista)
+            if current_id in df_history['SK_ID_CURR'].values:
+                return False, f"El ID {current_id} ya existe en {filename}."
+        except Exception as e:
+            # Si hay error leyendo (ej. archivo vacío), continuamos para crearlo/sobreescribirlo
+            pass
+
+    # 2. PREPARAR DATOS PARA GUARDAR
+    new_loan_variables = {
+        'SK_ID_CURR': current_id,
+        'NAME': str(raw_data['NAME']),
+        'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
+        'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
+        'CNT_CHILDREN': int(raw_data['CNT_CHILDREN_MAPPED']),
+        'AMT_INCOME_TOTAL': float(raw_data['AMT_INCOME_TOTAL']),
+        'AMT_CREDIT': float(raw_data['AMT_CREDIT']),
+        'NAME_INCOME_TYPE': str(raw_data['INCOME_TYPE']),
+        'NAME_EDUCATION_TYPE': str(raw_data['NAME_EDUCATION_TYPE']),
+        'NAME_FAMILY_STATUS': str(raw_data['FAMILY_STATUS']),
+        'NAME_HOUSING_TYPE': str(raw_data['HOUSING_TYPE']),
+        'AGE': int(raw_data['AGE']),
+        'YEARS_ACTUAL_WORK': float(raw_data['YEARS_ACTUAL_WORK']) if raw_data['YEARS_ACTUAL_WORK'] else None,
+        'TARGET': int(prediction),
+        'FECHA_REGISTRO': pd.Timestamp.now() # Opcional: añadimos fecha
+    }
+    
+    # Creamos un DataFrame de una sola fila
+    df_new_row = pd.DataFrame([new_loan_variables])
+
+    # 3. GUARDAR (APPEND)
     try:
-        new_loan_variables = {
-            'SK_ID_CURR': int(raw_data['SK_ID_CURR']),
-            'NAME': str(raw_data['NAME']),
-            'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
-            'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
-            'CNT_CHILDREN': int(raw_data['CNT_CHILDREN_MAPPED']),
-            'AMT_INCOME_TOTAL': float(raw_data['AMT_INCOME_TOTAL']),
-            'AMT_CREDIT': float(raw_data['AMT_CREDIT']),
-            'NAME_INCOME_TYPE': str(raw_data['INCOME_TYPE']),
-            'NAME_EDUCATION_TYPE': str(raw_data['NAME_EDUCATION_TYPE']),
-            'NAME_FAMILY_STATUS': str(raw_data['FAMILY_STATUS']),
-            'NAME_HOUSING_TYPE': str(raw_data['HOUSING_TYPE']),
-            'AGE': int(raw_data['AGE']),
-            'YEARS_ACTUAL_WORK': float(raw_data['YEARS_ACTUAL_WORK']) if raw_data['YEARS_ACTUAL_WORK'] else None,
-            'FLAG_PHONE': int(raw_data['FLAG_PHONE']),
-            'DEF_30_CNT_SOCIAL_CIRCLE': int(datos_completos['DEF_30_CNT_SOCIAL_CIRCLE'].iloc[0]),
-            'FLAG_COMPROBANTE_DOM_FISCAL': int(raw_data['FLAG_COMPROBANTE_DOM_FISCAL']),
-            'FLAG_ESTADO_CUENTA_BANC': int(raw_data['FLAG_ESTADO_CUENTA_BANC']),
-            'FLAG_PASAPORTE': int(raw_data['FLAG_PASAPORTE']),
-            'FLAG_TARJETA_ID_FISCAL': int(raw_data['FLAG_TARJETA_ID_FISCAL']),
-            'FLAG_DNI': int(raw_data['FLAG_DNI']),
-            'FLAG_CERTIFICADO_LABORAL': int(raw_data['FLAG_CERTIFICADO_LABORAL']),
-            'TARGET': int(prediction)
-        }
-        supabase.table('historical_loans').insert(new_loan_variables).execute()
-        # No mostramos success aquí para no saturar si es masivo, se maneja fuera
+        # Si el archivo no existe, escribimos con cabecera (header=True)
+        # Si existe, escribimos sin cabecera (header=False) y modo 'a' (append)
+        if not os.path.exists(filename):
+            df_new_row.to_csv(filename, index=False, mode='w')
+        else:
+            df_new_row.to_csv(filename, index=False, mode='a', header=False)
+            
+        return True, "Registro guardado exitosamente en CSV local."
+        
     except Exception as e:
-        st.error(f"Error Supabase ID {raw_data['SK_ID_CURR']}: {e}")
-
+        return False, f"Error al escribir en CSV: {str(e)}"
 # Mapeos auxiliares para transformar texto a números/dummies
 def get_mappings():
     return {
