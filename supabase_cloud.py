@@ -139,9 +139,8 @@ def go_to_page(page_name):
 import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPORTS
 import base64
 
-
 def page_home():
-    # --- 1. CSS ESTILO MEJORADO ---
+    # --- 1. CSS ESTILO REFINADO ---
     st.markdown("""
     <style>
     /* FONDO DE PANTALLA */
@@ -161,87 +160,85 @@ def page_home():
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.2); 
+        background-color: rgba(0, 0, 0, 0.25); 
         z-index: -1;
     }
 
     /* CONTENEDOR PRINCIPAL (Caja Blanca) */
     .header-box {
-        background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 25px;
-        padding: 50px 20px;
+        background-color: rgba(255, 255, 255, 0.96);
+        border-radius: 20px;
+        padding: 40px 20px;
         margin: 20px auto;
-        max-width: 800px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
-    /* ESTILO DEL LOGO */
+    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        max-width: 180px; /* Ajusta el tamaño según prefieras */
-        margin-bottom: 20px;
-        filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.2)); /* Sombra para dar relieve */
+        max-width: 100px; /* Tamaño reducido según tu petición */
+        height: auto;
+        margin-bottom: 15px;
+        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
     }
 
     .custom-title {
-        color: #1E1E1E !important;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #111827 !important; /* Un gris casi negro muy elegante */
+        font-family: 'Inter', 'Segoe UI', sans-serif;
         font-weight: 800;
-        font-size: 3.5rem;
+        font-size: 2.8rem;
         margin: 0;
-        letter-spacing: -1px;
+        letter-spacing: -0.5px;
     }
 
     .custom-subtitle {
-        color: #555555 !important;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 1.3rem;
-        font-weight: 300;
-        margin-top: 10px;
-    }
-    
-    /* BOTONES */
-    .stButton > button {
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        color: #4B5563 !important; /* Gris suave */
+        font-family: 'Inter', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin-top: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. CONTENIDO CON LOGO ---
-    # Nota: Asegúrate de que 'logo.png' esté en la misma carpeta que el script.
-    # Usamos base64 para inyectar la imagen directamente en el HTML del box
+    # --- 2. LÓGICA DE IMAGEN ---
     import base64
     
     def get_base64_image(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
+        try:
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        except FileNotFoundError:
+            return None
 
-    try:
-        img_base64 = get_base64_image("logo.png")
-        logo_html = f'<img src="data:image/png;base64,{img_base64}" class="logo-img">'
-    except:
-        logo_html = "" # Si no encuentra la imagen, no muestra nada o puedes poner un icono
+    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
+    img_b64 = get_base64_image("logo.png") 
+    
+    if img_b64:
+        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
+    else:
+        # Fallback en caso de que no encuentre el archivo
+        logo_html = ""
 
+    # --- 3. RENDERIZADO DEL HEADER ---
     st.markdown(f"""
     <div class="header-box">
         {logo_html}
         <h1 class="custom-title">Creditum</h1>
-        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio para decisiones financieras seguras.</p>
+        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 3. BOTONES DE ACCIÓN ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([1, 2, 2, 1])
-
-    with col_action1:
+    # --- 4. BOTONES ---
+    col1, col2, col3, col4 = st.columns([1, 1.5, 1.5, 1])
+    with col2:
         if st.button("👥 Quiénes Somos", use_container_width=True):
             go_to_page("about")
             st.rerun()
-
-    with col_action2:
-        if st.button("🚀 Solicitar Crédito", use_container_width=True, type="primary"):
+    with col3:
+        if st.button("🚀 Evaluación", use_container_width=True, type="primary"):
             go_to_page("request")
             st.rerun()
                 
