@@ -455,7 +455,51 @@ def page_credit_request():
     # -------------------------
     # CASO 2: MÚLTIPLE (TABLA)
     # -------------------------
-if st.button("Procesar Lista Completa"):
+    with tab2:
+        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.2rem;'>Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.</p>", unsafe_allow_html=True)
+
+        # Configuración de columnas para el editor
+        column_config = {
+            "SK_ID_CURR": st.column_config.NumberColumn("ID Solicitante", min_value=0, step=1, format="%d"),
+            "NAME": st.column_config.TextColumn("Nombre"),
+            "AGE": st.column_config.NumberColumn("Edad", min_value=18, max_value=100),
+            "GENDER": st.column_config.SelectboxColumn("Género", options=['Masculino', 'Femenino'], required=True),
+            "CNT_CHILDREN": st.column_config.SelectboxColumn("Hijos", options=['0','1', '2', '3', '4 o más'], required=True),
+            "EDUCATION": st.column_config.SelectboxColumn("Educación", options=['Lower secondary', 'Secondary / secondary special', 'Incomplete higher', 'Higher education', 'Academic degree'], required=True),
+            "FAMILY_STATUS": st.column_config.SelectboxColumn("Estado Civil", options=['Married', 'Single / not married', 'Civil marriage', 'Separated', 'Widow'], required=True),
+            "HOUSING": st.column_config.SelectboxColumn("Vivienda", options=['With parents', 'Rented apartment', 'House / apartment', 'Municipal apartment', 'Office apartment', 'Co-op apartment'], required=True),
+            "INCOME_TYPE": st.column_config.SelectboxColumn("Fuente Ingresos", options=['Working', 'State servant', 'Commercial associate', 'Businessman', 'Maternity leave', 'Student', 'Unemployed', 'Pensioner'], required=True),
+            "AMT_INCOME": st.column_config.NumberColumn("Ingresos", min_value=0),
+            "AMT_CREDIT": st.column_config.NumberColumn("Crédito", min_value=0),
+            "YEARS_WORKED": st.column_config.NumberColumn("Años Trabajados", min_value=0),
+            "OWN_REALTY": st.column_config.CheckboxColumn("Casa Propia"),
+            "OWN_CAR": st.column_config.CheckboxColumn("Coche Propio"),
+            # Simplificamos algunos flags documentales para que la tabla no sea kilométrica, 
+            # asumiendo True por defecto o añadiendo solo los críticos. Añade más si es necesario.
+            "FLAG_PHONE": st.column_config.CheckboxColumn("Teléfono"),
+            "FLAG_DNI": st.column_config.CheckboxColumn("DNI"),
+            "FLAG_PASAPORTE": st.column_config.CheckboxColumn("Pasaporte"),
+            "FLAG_CERTIFICADO_LABORAL": st.column_config.CheckboxColumn("Cert. Laboral"),
+            "FLAG_COMPROBANTE_DOM_FISCAL": st.column_config.CheckboxColumn("Comp. Domicilio"),
+            "FLAG_ESTADO_CUENTA_BANC": st.column_config.CheckboxColumn("Estado Cuenta"),
+            "FLAG_TARJETA_ID_FISCAL": st.column_config.CheckboxColumn("ID Fiscal")
+
+        }
+
+        # DataFrame plantilla
+        df_template = pd.DataFrame(columns=[
+    "SK_ID_CURR", "NAME", "AGE", "GENDER", "CNT_CHILDREN", "EDUCATION", 
+    "FAMILY_STATUS", "HOUSING", "INCOME_TYPE", "AMT_INCOME", "AMT_CREDIT", 
+    "YEARS_WORKED", "OWN_REALTY", "OWN_CAR",
+    "FLAG_PHONE", "FLAG_DNI", "FLAG_PASAPORTE",
+    "FLAG_CERTIFICADO_LABORAL", "FLAG_COMPROBANTE_DOM_FISCAL",
+    "FLAG_ESTADO_CUENTA_BANC", "FLAG_TARJETA_ID_FISCAL"
+    ])
+
+        edited_df = st.data_editor(df_template, num_rows="dynamic", column_config=column_config, use_container_width=True)
+
+        if st.button("Procesar Lista Completa"):
             if edited_df.empty:
                 st.warning("La tabla está vacía.")
             else:
