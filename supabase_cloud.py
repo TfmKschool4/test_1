@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -140,109 +141,112 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CONFIGURACIÓN DE ESTILO (Finanzas & Big Data) ---
+    # --- 1. CSS ESTILO REFINADO ---
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-
-    /* FONDO TEMÁTICO: ANÁLISIS FINANCIERO / BIG DATA */
+    /* FONDO DE PANTALLA */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(10, 20, 35, 0.85), rgba(10, 20, 35, 0.85)), 
-                    url("https://images.unsplash.com/photo-1551288049-bbbda536639a?q=80&w=2070&auto=format&fit=crop");
+        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
         background-attachment: fixed;
     }
 
-    /* TARJETA CENTRAL (GLASSMORPHISM REFINADO) */
-    .main-card {
-        background: rgba(255, 255, 255, 0.98);
-        border-radius: 28px;
-        padding: 60px 45px;
-        margin: 50px auto;
-        max-width: 620px;
+    /* CAPA OSCURA SUAVE */
+    [data-testid="stAppViewContainer"]::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.25); 
+        z-index: -1;
+    }
+
+    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
+    .header-box {
+        background-color: rgba(255, 255, 255, 0.96);
+        border-radius: 20px;
+        padding: 40px 20px;
+        margin: 20px auto;
+        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         text-align: center;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
-    /* CONTENEDOR DEL LOGO */
-    .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 30px;
-    }
-
+    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
     .logo-img {
-        width: 240px; /* Tamaño destacado al ser la marca única */
+        max-width: 100px; /* Tamaño reducido según tu petición */
         height: auto;
-        filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.1));
+        margin-bottom: 15px;
+        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
     }
 
-    /* LÍNEA DECORATIVA TÉCNICA */
-    .tech-divider {
-        width: 50px;
-        height: 4px;
-        background: linear-gradient(90deg, #10B981, #3B82F6);
-        margin: 0 auto 25px auto;
-        border-radius: 2px;
+    .custom-title {
+        color: #111827 !important; /* Un gris casi negro muy elegante */
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        font-weight: 800;
+        font-size: 2.8rem;
+        margin: 0;
+        letter-spacing: -0.5px;
     }
 
-    .hero-subtitle {
-        color: #475569 !important;
+    .custom-subtitle {
+        color: #4B5563 !important; /* Gris suave */
         font-family: 'Inter', sans-serif;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 400;
-        line-height: 1.6;
-        margin-bottom: 10px;
-    }
-
-    /* BOTONES ESTILO CORPORATIVO */
-    div.stButton > button {
-        border-radius: 12px !important;
-        padding: 12px 28px !important;
-        font-weight: 600 !important;
-        font-family: 'Inter', sans-serif !important;
-        transition: all 0.3s ease !important;
+        margin-top: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. CARGA DE LOGOTIPO ---
+    # --- 2. LÓGICA DE IMAGEN ---
     import base64
-    def get_base64_image(path):
-        try:
-            with open(path, "rb") as f:
-                return base64.b64encode(f.read()).decode()
-        except: return None
-
-    img_b64 = get_base64_image("logo.png")
     
-    # --- 3. ESTRUCTURA DE LA PÁGINA ---
-    logo_html = f'<div class="logo-container"><img src="data:image/png;base64,{img_b64}" class="logo-img"></div>' if img_b64 else "<h2>Logo</h2>"
+    def get_base64_image(image_path):
+        try:
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        except FileNotFoundError:
+            return None
 
+    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
+    img_b64 = get_base64_image("logo.png") 
+    
+    if img_b64:
+        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
+    else:
+        # Fallback en caso de que no encuentre el archivo
+        logo_html = ""
+
+    # --- 3. RENDERIZADO DEL HEADER ---
     st.markdown(f"""
-    <div class="main-card">
+    <div class="header-box">
         {logo_html}
-        <div class="tech-divider"></div>
-        <p class="hero-subtitle">
-            Soluciones avanzadas de <b>Credit Scoring</b> basadas en inteligencia de datos y modelos predictivos de riesgo.
-        </p>
+        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. ACCIONES PRINCIPALES ---
-    col_spacer_l, col_btn1, col_btn2, col_spacer_r = st.columns([1, 1.6, 1.6, 1])
-    
-    with col_btn1:
-        if st.button("📊 Quiénes Somos", use_container_width=True):
-            go_to_page("about")
-            st.rerun()
-            
-    with col_btn2:
-        if st.button("⚡ Iniciar Evaluación", use_container_width=True, type="primary"):
-            go_to_page("request")
-            st.rerun()
+    # --- 4. BOTONES DE ACCIÓN ---
+    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
+
+    with col_action1:
+        with st.container(border=True):
+            st.markdown("### 🏢 Sobre nosotros")
+            if st.button("👥 Quiénes Somos", use_container_width=True):
+                go_to_page("about")
+                st.rerun()
+
+    with col_action2:
+        with st.container(border=True):
+            st.markdown("### 🚀 Evaluación")
+            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
+                go_to_page("request")
+                st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
