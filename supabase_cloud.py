@@ -140,112 +140,137 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS ESTILO REFINADO ---
+    # --- 1. CSS DE ALTA GAMA (ESTÉTICA PREMIUM) ---
     st.markdown("""
     <style>
-    /* FONDO DE PANTALLA */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap');
+
+    /* FONDO DINÁMICO */
     [data-testid="stAppViewContainer"] {
-        background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
+        background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                    url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
-        background-repeat: no-repeat;
         background-attachment: fixed;
     }
 
-    /* CAPA OSCURA SUAVE */
-    [data-testid="stAppViewContainer"]::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.25); 
-        z-index: -1;
+    /* ANIMACIÓN DE ENTRADA */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    /* CONTENEDOR PRINCIPAL (Caja Blanca) */
-    .header-box {
-        background-color: rgba(255, 255, 255, 0.96);
-        border-radius: 20px;
-        padding: 40px 20px;
-        margin: 20px auto;
-        max-width: 650px; /* Caja un poco más estrecha para que se vea compacta */
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    /* CAJA PRINCIPAL GLASSMORPHISM */
+    .main-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 30px;
+        padding: 60px 40px;
+        margin: 40px auto;
+        max-width: 700px;
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: fadeIn 1s ease-out;
     }
 
-    /* LOGO MÁS PEQUEÑO Y ESTILIZADO */
+    /* LOGO CON EFECTO PROFESIONAL */
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
+    }
+
     .logo-img {
-        max-width: 100px; /* Tamaño reducido según tu petición */
+        width: 85px; /* Tamaño optimizado y pequeño */
         height: auto;
-        margin-bottom: 15px;
-        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
+        filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.1));
+        transition: transform 0.3s ease;
+    }
+    
+    .logo-img:hover {
+        transform: scale(1.05);
     }
 
-    .custom-title {
-        color: #111827 !important; /* Un gris casi negro muy elegante */
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        font-weight: 800;
-        font-size: 2.8rem;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-
-    .custom-subtitle {
-        color: #4B5563 !important; /* Gris suave */
+    /* TEXTOS */
+    .hero-title {
+        color: #0F172A !important;
         font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
+        font-weight: 800;
+        font-size: 3.8rem;
+        margin: 0;
+        letter-spacing: -2px;
+        line-height: 1;
+    }
+
+    .hero-subtitle {
+        color: #64748B !important;
+        font-family: 'Inter', sans-serif;
+        font-size: 1.25rem;
         font-weight: 400;
-        margin-top: 5px;
+        margin-top: 15px;
+        max-width: 80% ;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* LÍNEA DECORATIVA */
+    .divider {
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, #10B981, #3B82F6);
+        margin: 30px auto;
+        border-radius: 2px;
+    }
+
+    /* AJUSTE DE BOTONES DE STREAMLIT */
+    div.stButton > button {
+        border-radius: 50px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        transition: all 0.2s ease !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 2. LÓGICA DE IMAGEN ---
+    # --- 2. LÓGICA DE LOGO ---
     import base64
-    
-    def get_base64_image(image_path):
+    def get_base64_image(path):
         try:
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode()
-        except FileNotFoundError:
-            return None
+            with open(path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+        except: return None
 
-    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
-    img_b64 = get_base64_image("logo.png") 
-    
-    if img_b64:
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        # Fallback en caso de que no encuentre el archivo
-        logo_html = ""
+    img_b64 = get_base64_image("logo.png")
+    logo_tag = f'<div class="logo-container"><img src="data:image/png;base64,{img_b64}" class="logo-img"></div>' if img_b64 else ""
 
-    # --- 3. RENDERIZADO DEL HEADER ---
+    # --- 3. ESTRUCTURA VISUAL ---
     st.markdown(f"""
-    <div class="header-box">
-        {logo_html}
-        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
+    <div class="main-card">
+        {logo_tag}
+        <h1 class="hero-title">Creditum</h1>
+        <div class="divider"></div>
+        <p class="hero-subtitle">
+            Plataforma de inteligencia predictiva para la evaluación de riesgo y gestión de carteras de crédito.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
-
-    with col_action1:
-        with st.container(border=True):
-            st.markdown("### 🏢 Sobre nosotros")
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-
-    with col_action2:
-        with st.container(border=True):
-            st.markdown("### 🚀 Evaluación")
-            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
+    # --- 4. BOTONES DE NAVEGACIÓN ---
+    col1, col2, col3, col4 = st.columns([1, 1.5, 1.5, 1])
+    
+    with col2:
+        if st.button("📊 Quiénes Somos", use_container_width=True):
+            go_to_page("about")
+            st.rerun()
+            
+    with col3:
+        if st.button("⚡ Iniciar Evaluación", use_container_width=True, type="primary"):
+            go_to_page("request")
+            st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
