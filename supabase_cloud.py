@@ -48,17 +48,17 @@ model_final, datos_internos_df = load_resources()
 
 def process_single_prediction(datos_solicitante, raw_input_data):
     """
-    Procesa solicitud, predice y gestiona el guardado en CSV.
+    Procesa una única solicitud (diccionario pre-procesado), hace el merge, predice y guarda.
     """
     df_datos = pd.DataFrame([datos_solicitante])
     
-    # Merge con datos internos (Bureau)
+    # Merge con datos internos
     datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
     
     if datos_completos.empty:
-        return None, "ID no encontrado en base interna (Bureau)", False, "No procesado"
+        return None, "ID no encontrado en base interna"
 
-    # Seleccionar columnas del modelo (igual que antes)
+    # Columnas requeridas por el modelo
     columnas_modelo = [
         'SK_ID_CURR', 'NAME', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'CNT_CHILDREN',
         'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'LEVEL_EDUCATION_TYPE', 'AGE_BINS',
@@ -79,73 +79,45 @@ def process_single_prediction(datos_solicitante, raw_input_data):
     
     # Predicción
     X = datos_completos.drop(['SK_ID_CURR', 'NAME'], axis=1)
-    prediction = model_final.predict(X)[0]
+    prediction = model_final.predict(X)[0] # Tomamos el valor escalar
     
-    # --- AQUÍ LLAMAMOS A LA NUEVA FUNCIÓN CSV ---
-    saved_success, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
+    # Guardar en Supabase
+    save_to_supabase(raw_input_data, datos_completos, prediction)
     
-    return prediction, datos_completos, saved_success, saved_msg
+    return prediction, datos_completos
 
-# ------------------------------------------------------
-# FUNCIÓN DE GUARDADO EN CSV (REEMPLAZA A SUPABASE)
-# ------------------------------------------------------
+def save_to_supabase(raw_data, datos_completos, prediction):
+    if not supabase: return
 
-def save_to_csv(raw_data, datos_completos, prediction):
-    """
-    Guarda la predicción en un CSV local verificando duplicados.
-    Retorna: (bool_exito, str_mensaje)
-    """
-    filename = 'historial_creditos.csv'
-    current_id = int(raw_data['SK_ID_CURR'])
-
-    # 1. VERIFICAR SI EL ARCHIVO EXISTE Y LEERLO PARA BUSCAR DUPLICADOS
-    if os.path.exists(filename):
-        try:
-            # Leemos solo la columna ID para ser más rápidos
-            df_history = pd.read_csv(filename, usecols=['SK_ID_CURR'])
-            
-            # Chequeo de clave primaria (Si el ID ya está en la lista)
-            if current_id in df_history['SK_ID_CURR'].values:
-                return False, f"El ID {current_id} ya existe en {filename}."
-        except Exception as e:
-            # Si hay error leyendo (ej. archivo vacío), continuamos para crearlo/sobreescribirlo
-            pass
-
-    # 2. PREPARAR DATOS PARA GUARDAR
-    new_loan_variables = {
-        'SK_ID_CURR': current_id,
-        'NAME': str(raw_data['NAME']),
-        'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
-        'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
-        'CNT_CHILDREN': int(raw_data['CNT_CHILDREN_MAPPED']),
-        'AMT_INCOME_TOTAL': float(raw_data['AMT_INCOME_TOTAL']),
-        'AMT_CREDIT': float(raw_data['AMT_CREDIT']),
-        'NAME_INCOME_TYPE': str(raw_data['INCOME_TYPE']),
-        'NAME_EDUCATION_TYPE': str(raw_data['NAME_EDUCATION_TYPE']),
-        'NAME_FAMILY_STATUS': str(raw_data['FAMILY_STATUS']),
-        'NAME_HOUSING_TYPE': str(raw_data['HOUSING_TYPE']),
-        'AGE': int(raw_data['AGE']),
-        'YEARS_ACTUAL_WORK': float(raw_data['YEARS_ACTUAL_WORK']) if raw_data['YEARS_ACTUAL_WORK'] else None,
-        'TARGET': int(prediction),
-        'FECHA_REGISTRO': pd.Timestamp.now() # Opcional: añadimos fecha
-    }
-    
-    # Creamos un DataFrame de una sola fila
-    df_new_row = pd.DataFrame([new_loan_variables])
-
-    # 3. GUARDAR (APPEND)
     try:
-        # Si el archivo no existe, escribimos con cabecera (header=True)
-        # Si existe, escribimos sin cabecera (header=False) y modo 'a' (append)
-        if not os.path.exists(filename):
-            df_new_row.to_csv(filename, index=False, mode='w')
-        else:
-            df_new_row.to_csv(filename, index=False, mode='a', header=False)
-            
-        return True, "Registro guardado exitosamente en CSV local."
-        
+        new_loan_variables = {
+            'SK_ID_CURR': int(raw_data['SK_ID_CURR']),
+            'NAME': str(raw_data['NAME']),
+            'CODE_GENDER': 'M' if raw_data['GENDER'] == 'Masculino' else 'F',
+            'FLAG_OWN_REALTY': int(raw_data['FLAG_OWN_REALTY']),
+            'CNT_CHILDREN': int(raw_data['CNT_CHILDREN_MAPPED']),
+            'AMT_INCOME_TOTAL': float(raw_data['AMT_INCOME_TOTAL']),
+            'AMT_CREDIT': float(raw_data['AMT_CREDIT']),
+            'NAME_INCOME_TYPE': str(raw_data['INCOME_TYPE']),
+            'NAME_EDUCATION_TYPE': str(raw_data['NAME_EDUCATION_TYPE']),
+            'NAME_FAMILY_STATUS': str(raw_data['FAMILY_STATUS']),
+            'NAME_HOUSING_TYPE': str(raw_data['HOUSING_TYPE']),
+            'AGE': int(raw_data['AGE']),
+            'YEARS_ACTUAL_WORK': float(raw_data['YEARS_ACTUAL_WORK']) if raw_data['YEARS_ACTUAL_WORK'] else None,
+            'FLAG_PHONE': int(raw_data['FLAG_PHONE']),
+            'DEF_30_CNT_SOCIAL_CIRCLE': int(datos_completos['DEF_30_CNT_SOCIAL_CIRCLE'].iloc[0]),
+            'FLAG_COMPROBANTE_DOM_FISCAL': int(raw_data['FLAG_COMPROBANTE_DOM_FISCAL']),
+            'FLAG_ESTADO_CUENTA_BANC': int(raw_data['FLAG_ESTADO_CUENTA_BANC']),
+            'FLAG_PASAPORTE': int(raw_data['FLAG_PASAPORTE']),
+            'FLAG_TARJETA_ID_FISCAL': int(raw_data['FLAG_TARJETA_ID_FISCAL']),
+            'FLAG_DNI': int(raw_data['FLAG_DNI']),
+            'FLAG_CERTIFICADO_LABORAL': int(raw_data['FLAG_CERTIFICADO_LABORAL']),
+            'TARGET': int(prediction)
+        }
+        supabase.table('historical_loans').insert(new_loan_variables).execute()
+        # No mostramos success aquí para no saturar si es masivo, se maneja fuera
     except Exception as e:
-        return False, f"Error al escribir en CSV: {str(e)}"
+        st.error(f"Error Supabase ID {raw_data['SK_ID_CURR']}: {e}")
 
 # Mapeos auxiliares para transformar texto a números/dummies
 def get_mappings():
@@ -168,9 +140,10 @@ import os # <--- ASEGÚRATE DE IMPORTAR ESTO AL PRINCIPIO JUNTO A LOS OTROS IMPO
 import base64
 
 def page_home():
-    # --- 1. CSS ESTILO REFINADO (Mantenemos tu estilo y añadimos centrado de botones) ---
+# --- 1. CSS ESTILO REFINADO ---
     st.markdown("""
     <style>
+    /* FONDO DE PANTALLA */
     [data-testid="stAppViewContainer"] {
         background-image: url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
@@ -179,75 +152,47 @@ def page_home():
         background-attachment: fixed;
     }
 
+    /* CONTENEDOR PRINCIPAL (Efecto Cristal Transparente) */
     .header-box {
-        background-color: rgba(255, 255, 255, 0.96);
+        background-color: rgba(255, 255, 255, 0.7); /* Reducimos la opacidad a 0.7 */
+        backdrop-filter: blur(10px); /* Esto crea el efecto de vidrio esmerilado */
+        -webkit-backdrop-filter: blur(10px); 
         border-radius: 20px;
         padding: 40px 20px;
         margin: 20px auto;
-        max-width: 650px; 
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        max-width: 650px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra más sutil */
         text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3); /* Borde suave */
     }
 
     .logo-img {
-        max-width: 100px;
+        max-width: 120px;
         height: auto;
         margin-bottom: 15px;
+        /* Quitamos el filtro pesado para que se vea limpio */
     }
 
     .custom-title {
-        color: #111827 !important;
+        color: #000000 !important; /* Negro puro para máximo contraste sobre el cristal */
         font-family: 'Inter', sans-serif;
         font-weight: 800;
-        font-size: 2.8rem;
+        font-size: 3.5rem;
         margin: 0;
-    }
-
-    /* Estilo para centrar la columna de botones */
-    .stButton button {
-        margin: 0 auto;
-        display: block;
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.5); /* Sutil relieve */
     }
     </style>
+
+    .stButton button p {
+        font-size: 1.8rem !important;
+        font-weight: bold !important;
+    }
+    .stButton button {
+        height: 4.5rem !important;
+    }
     """, unsafe_allow_html=True)
 
     # --- 2. LÓGICA DE IMAGEN ---
-    img_b64 = get_base64_image("logo.png") 
-    logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">' if img_b64 else ""
-
-    # --- 3. RENDERIZADO DEL HEADER ---
-    st.markdown(f"""
-    <div class="header-box">
-        {logo_html}
-        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # --- 4. BOTONES DE ACCIÓN (DISPOSICIÓN VERTICAL Y CENTRADA) ---
-    # Creamos 3 columnas y usamos la del centro para apilar los elementos
-    col_left, col_center, col_right = st.columns([1, 2, 1])
-
-    with col_center:
-        # BOTÓN 1: EVALUACIÓN (ARRIBA)
-        with st.container(border=True):
-            st.markdown("<h3 style='text-align: center;'>🚀 Evaluación</h3>", unsafe_allow_html=True)
-            if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
-                go_to_page("request")
-                st.rerun()
-
-        # Espacio pequeño entre tarjetas
-        st.write("") 
-
-        # BOTÓN 2: SOBRE NOSOTROS (ABAJO)
-        with st.container(border=True):
-            st.markdown("<h3 style='text-align: center;'>🏢 Sobre nosotros</h3>", unsafe_allow_html=True)
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-    # --- 2. LÓGICA DE IMAGEN ---
-    import base64
-    
     def get_base64_image(image_path):
         try:
             with open(image_path, "rb") as img_file:
@@ -255,61 +200,99 @@ def page_home():
         except FileNotFoundError:
             return None
 
-    # Intentamos cargar el logo (usa .png o .jpg según tu archivo)
     img_b64 = get_base64_image("logo.png") 
-    
-    if img_b64:
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">'
-    else:
-        # Fallback en caso de que no encuentre el archivo
-        logo_html = ""
+    logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img">' if img_b64 else ""
 
     # --- 3. RENDERIZADO DEL HEADER ---
     st.markdown(f"""
     <div class="header-box">
         {logo_html}
-        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
+        <h2 class="custom-title">Análisis inteligente del riesgo crediticio</h2>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. BOTONES DE ACCIÓN ---
-    col_spacer_left, col_action1, col_action2, col_spacer_right = st.columns([0.5, 2, 2, 0.5])
+    # --- 4. BOTONES DE ACCIÓN CENTRADOS Y APILADOS ---
+    # Usamos columnas para centrar el bloque de botones en el medio de la página
+    col_left, col_center, col_right = st.columns([1, 2, 1])
 
-    with col_action1:
+    with col_center:
+        # BLOQUE 1: EVALUACIÓN (Arriba)
         with st.container(border=True):
-            st.markdown("### 🏢 Sobre nosotros")
-            if st.button("👥 Quiénes Somos", use_container_width=True):
-                go_to_page("about")
-                st.rerun()
-
-    with col_action2:
-        with st.container(border=True):
-            st.markdown("### 🚀 Evaluación")
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🚀 Evaluación</h2>", unsafe_allow_html=True)
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
+                st.rerun()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # BLOQUE 2: SOBRE NOSOTROS (Debajo)
+        with st.container(border=True):
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🏢 Sobre nosotros</h2>", unsafe_allow_html=True)
+            if st.button("👥 Quiénes Somos", use_container_width=True):
+                go_to_page("about")
                 st.rerun()
                 
 def page_about():
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    st.title("Sobre Nosotros")
+    
+    # Título más grande
+    st.markdown("<h1 style='font-size: 3rem;'>Sobre Nosotros</h1>", unsafe_allow_html=True)
 
-    # 🔽 MODIFICADO: TEXTO CORPORATIVO
+    # Contenedor con tamaño de letra personalizado
+    # Ajusta '22px' al tamaño que prefieras
     st.markdown("""
-    Somos una plataforma especializada en **analítica avanzada y evaluación de riesgo crediticio**, diseñada para apoyar la toma de decisiones financieras mediante el uso de **modelos predictivos**.
-
-    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el objetivo de **estimar la probabilidad de impago** de un solicitante y proporcionar recomendaciones objetivas, consistentes y escalables para la concesión de crédito.
-
-    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo tanto el análisis **individual** como el **procesamiento masivo de solicitudes**, con trazabilidad de resultados y almacenamiento histórico de decisiones.
-
-    Creemos en el uso responsable de la tecnología para impulsar **decisiones financieras más inteligentes, eficientes y basadas en datos**, reduciendo la incertidumbre y mejorando la gestión del riesgo.
-
-    > *La tecnología al servicio de decisiones financieras más seguras y eficientes.*
-    """)
-    #  - Opcional
+    <div style="font-size: 22px; line-height: 1.6; text-align: justify;">
+    
+    Somos una plataforma especializada en <b>analítica avanzada y evaluación de riesgo crediticio</b>, 
+    diseñada para apoyar la toma de decisiones financieras mediante el uso de <b>modelos predictivos</b>.
+    <br><br>
+    Nuestra solución analiza de forma integral variables financieras, laborales y demográficas con el 
+    objetivo de <b>estimar la probabilidad de impago</b> de un solicitante y proporcionar recomendaciones 
+    objetivas, consistentes y escalables para la concesión de crédito.
+    <br><br>
+    El sistema está pensado para integrarse en procesos reales de evaluación crediticia, permitiendo 
+    tanto el análisis <b>individual</b> como el <b>procesamiento masivo de solicitudes</b>, con 
+    trazabilidad de resultados y almacenamiento histórico de decisiones.
+    <br><br>
+    Creemos en el uso responsable de la tecnología para impulsar <b>decisiones financieras más 
+    inteligentes, eficientes y basadas en datos</b>, reduciendo la incertidumbre y mejorando la gestión del riesgo.
+    
+    <blockquote style="font-size: 24px; font-style: italic; border-left: 5px solid #ff4b4b; padding-left: 15px; margin-top: 20px;">
+    "La tecnología al servicio de decisiones financieras más seguras y eficientes."
+    </blockquote>
+    
+    </div>
+    """, unsafe_allow_html=True)
 
 def page_credit_request():
+    # --- CSS ESPECÍFICO PARA ESTA PÁGINA ---
+    st.markdown("""
+    <style>
+        /* Tamaño de los títulos de las pestañas (Tabs) */
+        button[data-baseweb="tab"] div {
+            font-size: 20px !important;
+        }
+        /* Tamaño de las etiquetas de los campos (Labels) */
+        label p {
+            font-size: 1.2rem !important;
+            font-weight: bold !important;
+        }
+        /* Tamaño del texto dentro de los campos de entrada */
+        input {
+            font-size: 1.1rem !important;
+        }
+        /* Tamaño del texto de los botones de esta página */
+        .stButton button {
+            font-size: 1.3rem !important;
+            height: 3em !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    st.title("Solicitud de Crédito")
+    
+    # Título principal aumentado
+    st.markdown("<h1 style='font-size: 3rem;'>Solicitud de Crédito</h1>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["👤 Individual", "👥 Múltiples Solicitantes"])
 
@@ -317,7 +300,8 @@ def page_credit_request():
     # CASO 1: INDIVIDUAL
     # -------------------------
     with tab1:
-        st.subheader("Formulario Individual")
+        # Subtítulo aumentado
+        st.markdown("<h2 style='font-size: 1.8rem;'>Formulario Individual</h2>", unsafe_allow_html=True)
         
         # --- INPUTS (Código original adaptado) ---
         col1, col2 = st.columns(2)
@@ -453,8 +437,8 @@ def page_credit_request():
     # CASO 2: MÚLTIPLE (TABLA)
     # -------------------------
     with tab2:
-        st.subheader("Carga Masiva de Solicitudes")
-        st.info("Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.")
+        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.2rem;'>Añada filas a la tabla a continuación. Puede copiar y pegar desde Excel.</p>", unsafe_allow_html=True)
 
         # Configuración de columnas para el editor
         column_config = {
@@ -609,4 +593,5 @@ elif st.session_state.page == "about":
 elif st.session_state.page == "request":
     page_credit_request()
 elif st.session_state.page == "request":
+    page_credit_request()
     page_credit_request()
