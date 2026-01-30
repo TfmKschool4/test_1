@@ -209,9 +209,6 @@ def page_home():
     }
     </style>
 
-    .stButton button {
-        height: 4.5rem !important;
-    }
     """, unsafe_allow_html=True)
 
     # --- 2. LÓGICA DE IMAGEN ---
