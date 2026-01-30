@@ -182,6 +182,14 @@ def page_home():
         text-shadow: 1px 1px 2px rgba(255,255,255,0.5); /* Sutil relieve */
     }
     </style>
+
+    .stButton button p {
+        font-size: 1.8rem !important;
+        font-weight: bold !important;
+    }
+    .stButton button {
+        height: 4.5rem !important;
+    }
     """, unsafe_allow_html=True)
 
     # --- 2. LÓGICA DE IMAGEN ---
@@ -210,7 +218,7 @@ def page_home():
     with col_center:
         # BLOQUE 1: EVALUACIÓN (Arriba)
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center; font-size: 3rem;'>🚀 Evaluación</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🚀 Evaluación</h2>", unsafe_allow_html=True)
             if st.button("💳 Solicitar Crédito", use_container_width=True, type="primary"):
                 go_to_page("request")
                 st.rerun()
@@ -219,7 +227,7 @@ def page_home():
 
         # BLOQUE 2: SOBRE NOSOTROS (Debajo)
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center; font-size: 3rem;'>🏢 Sobre nosotros</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; font-size: 2.2rem;'>🏢 Sobre nosotros</h2>", unsafe_allow_html=True)
             if st.button("👥 Quiénes Somos", use_container_width=True):
                 go_to_page("about")
                 st.rerun()
