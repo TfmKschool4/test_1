@@ -149,7 +149,7 @@ def page_home():
     /* CONFIGURACIÓN DEL FONDO CON TU IMAGEN FONDO.JPG */
     [data-testid="stAppViewContainer"] {
         background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.75)), 
-                    url("https://raw.githubusercontent.com/tu-usuario/tu-repo/main/fondo.jpg"); /* O ruta local si st.image lo permite */
+                    url("https://raw.githubusercontent.com/tu-usuario/tu-repo/main/fondo.png"); /* O ruta local si st.image lo permite */
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
