@@ -226,8 +226,7 @@ def page_home():
     st.markdown(f"""
     <div class="header-box">
         {logo_html}
-        <h1 class="custom-title">Creditum</h1>
-        <p class="custom-subtitle">Análisis inteligente del riesgo crediticio.</p>
+        <h1 class="custom-title">Análisis inteligente del riesgo crediticio</h1>
     </div>
     """, unsafe_allow_html=True)
 
