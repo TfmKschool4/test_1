@@ -824,35 +824,43 @@ def page_credit_request():
                 bins = [18, 34, 43, 54, 100]
                 labels = [1, 2, 3, 4]
 
+
                 for index, row in edited_df.iterrows():
                     try:
-                        # 1. Mapeos básicos y validación de edad
+                        # 1. VALIDACIÓN ANTICIPADA: Verificar si hay campos críticos nulos
+                        if pd.isna(row['SK_ID_CURR']) or pd.isna(row['AMT_INCOME']) or pd.isna(row['AMT_CREDIT']):
+                            results_log.append({"ID": "N/A", "Nombre": row.get('NAME', 'N/A'), "Resultado": "⚠️ Error: Faltan datos obligatorios (ID, Ingresos o Crédito)"})
+                            continue
+                
+                        # 2. Mapeos básicos y validación de edad
                         age_val = row['AGE'] if pd.notnull(row['AGE']) else 18
                         age_bin = pd.cut([age_val], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
                         
-                        # 2. Construir diccionario solicitante (Para el modelo)
-                        # Usamos int(row['COL']) para los checkboxes porque el modelo suele esperar 0 o 1
+                        # 3. Construir diccionario con conversiones seguras
                         d = {
                             'SK_ID_CURR': int(row['SK_ID_CURR']),
-                            'NAME': row['NAME'],
+                            'NAME': str(row['NAME']) if pd.notnull(row['NAME']) else "Sin nombre",
                             'AGE_BINS': int(age_bin),
                             'GENDER_M': 1 if row['GENDER'] == 'Masculino' else 0,
                             'GENDER_F': 1 if row['GENDER'] == 'Femenino' else 0,
-                            'CNT_CHILDREN': maps['children'][str(row['CNT_CHILDREN'])],
-                            'LEVEL_EDUCATION_TYPE': maps['education'][row['EDUCATION']],
+                            'CNT_CHILDREN': maps['children'].get(str(row['CNT_CHILDREN']), 0),
+                            'LEVEL_EDUCATION_TYPE': maps['education'].get(row['EDUCATION'], 1),
                             'AMT_INCOME_TOTAL': float(row['AMT_INCOME']),
                             'AMT_CREDIT': float(row['AMT_CREDIT']),
                             'YEARS_ACTUAL_WORK': float(row['YEARS_WORKED']) if pd.notnull(row['YEARS_WORKED']) else 0.0,
-                            'FLAG_OWN_CAR': int(row['OWN_CAR']), 
-                            'FLAG_OWN_REALTY': int(row['OWN_REALTY']),
-                            'FLAG_PHONE': int(row['FLAG_PHONE']), 
-                            'FLAG_DNI': int(row['FLAG_DNI']), 
-                            'FLAG_PASAPORTE': int(row['FLAG_PASAPORTE']), 
-                            'FLAG_COMPROBANTE_DOM_FISCAL': int(row['FLAG_COMPROBANTE_DOM_FISCAL']), 
-                            'FLAG_ESTADO_CUENTA_BANC': int(row['FLAG_ESTADO_CUENTA_BANC']), 
-                            'FLAG_TARJETA_ID_FISCAL': int(row['FLAG_TARJETA_ID_FISCAL']), 
-                            'FLAG_CERTIFICADO_LABORAL': int(row['FLAG_CERTIFICADO_LABORAL'])
+                            # Uso de bool() para asegurar que el checkbox no sea None
+                            'FLAG_OWN_CAR': int(bool(row['OWN_CAR'])), 
+                            'FLAG_OWN_REALTY': int(bool(row['OWN_REALTY'])),
+                            'FLAG_PHONE': int(bool(row['FLAG_PHONE'])), 
+                            'FLAG_DNI': int(bool(row['FLAG_DNI'])), 
+                            'FLAG_PASAPORTE': int(bool(row['FLAG_PASAPORTE'])), 
+                            'FLAG_COMPROBANTE_DOM_FISCAL': int(bool(row['FLAG_COMPROBANTE_DOM_FISCAL'])), 
+                            'FLAG_ESTADO_CUENTA_BANC': int(bool(row['FLAG_ESTADO_CUENTA_BANC'])), 
+                            'FLAG_TARJETA_ID_FISCAL': int(bool(row['FLAG_TARJETA_ID_FISCAL'])), 
+                            'FLAG_CERTIFICADO_LABORAL': int(bool(row['FLAG_CERTIFICADO_LABORAL']))
                         }
+                        
+                        # ... resto de la lógica de OHE y predicción ...
 
                         # 3. OHE Family y Housing (Igual que tenías, pero asegurando los nombres)
                         fs = row['FAMILY_STATUS']
