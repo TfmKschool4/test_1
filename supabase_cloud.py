@@ -618,32 +618,7 @@ def render_history_section():
         else:
             st.info("Aún no hay registros guardados en el historial local.")
 
-# ------------------------------------------------------
-# VISTAS ACTUALIZADAS
-# ------------------------------------------------------
 
-def page_credit_request():
-    # Estilos CSS (se mantienen igual que tu código)
-    st.markdown("""<style>...</style>""", unsafe_allow_html=True)
-    
-    st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
-    st.markdown("<h1 style='font-size: 3rem;'>Solicitud de Crédito</h1>", unsafe_allow_html=True)
-
-    # --- NUEVA UBICACIÓN DEL HISTORIAL ---
-    # Se muestra aquí para que sea visible tanto en Individual como en Múltiple
-    render_history_section()
-    
-    st.divider()
-
-    tab1, tab2 = st.tabs(["👤 Individual", "👥 Múltiples Solicitantes"])
-
-    with tab1:
-        st.markdown("<h2 style='font-size: 1.8rem;'>Formulario Individual</h2>", unsafe_allow_html=True)
-        # ... (Resto del código del formulario individual)
-
-    with tab2:
-        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
-        # ... (Resto del código de carga masiva)
 
 # ------------------------------------------------------
 # 4. ENRUTAMIENTO PRINCIPAL
