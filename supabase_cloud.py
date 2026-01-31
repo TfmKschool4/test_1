@@ -536,6 +536,9 @@ def page_credit_request():
                 st.success("Proceso completado.")
                 st.table(pd.DataFrame(results_log))
 
+# ------------------------------------------------------
+# 5. ENRUTAMIENTO PRINCIPAL
+# ------------------------------------------------------
 
 if st.checkbox("Ver historial de solicitudes (CSV)"):
     if os.path.exists('historial_creditos.csv'):
@@ -543,6 +546,38 @@ if st.checkbox("Ver historial de solicitudes (CSV)"):
         st.dataframe(historial_df)
     else:
         st.write("Aún no hay registros guardados.")
+
+def clear_history():
+    filename = 'historial_creditos.csv'
+    if os.path.exists(filename):
+        os.remove(filename)
+        st.success("Historial borrado correctamente.")
+    else:
+        st.error("No existe ningún historial para borrar.")
+
+# Puedes colocar esto al final de page_credit_request()
+with st.expander("⚙️ Zona de Peligro"):
+    st.warning("Esta acción eliminará permanentemente todos los registros del CSV.")
+    if st.button("🗑️ Borrar todo el historial"):
+        clear_history()
+
+def delete_id_from_csv(id_to_delete):
+    filename = 'historial_creditos.csv'
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        # Convertimos a int para asegurar la comparación
+        df = df[df['SK_ID_CURR'] != int(id_to_delete)]
+        df.to_csv(filename, index=False)
+        return True
+    return False
+
+# Interfaz para borrado selectivo
+id_borrar = st.text_input("ID a eliminar del historial")
+if st.button("Eliminar Registro"):
+    if delete_id_from_csv(id_borrar):
+        st.success(f"ID {id_borrar} eliminado.")
+    else:
+        st.error("No se encontró el archivo o el ID.")
 
 
 # ------------------------------------------------------
