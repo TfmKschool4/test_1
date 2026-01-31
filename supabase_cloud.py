@@ -559,62 +559,103 @@ def page_credit_request():
                 st.table(pd.DataFrame(results_log))
 
 # ------------------------------------------------------
-# 5. ENRUTAMIENTO PRINCIPAL
+# FUNCIONES DE GESTIÓN DE HISTORIAL (CSV)
 # ------------------------------------------------------
 
-if st.checkbox("Ver historial de solicitudes (CSV)"):
-    if os.path.exists('historial_creditos.csv'):
-        historial_df = pd.read_csv('historial_creditos.csv')
-        st.dataframe(historial_df)
-    else:
-        st.write("Aún no hay registros guardados.")
+def delete_id_from_csv(id_to_delete):
+    filename = 'historial_creditos.csv'
+    if os.path.exists(filename):
+        try:
+            df = pd.read_csv(filename)
+            # Aseguramos que el ID sea numérico para la comparación
+            id_int = int(id_to_delete)
+            if id_int in df['SK_ID_CURR'].values:
+                df = df[df['SK_ID_CURR'] != id_int]
+                df.to_csv(filename, index=False)
+                return True, f"ID {id_to_delete} eliminado correctamente."
+            return False, "ID no encontrado en el historial."
+        except ValueError:
+            return False, "Por favor, introduce un ID numérico válido."
+    return False, "No existe archivo de historial."
 
 def clear_history():
     filename = 'historial_creditos.csv'
     if os.path.exists(filename):
         os.remove(filename)
-        st.success("Historial borrado correctamente.")
-    else:
-        st.error("No existe ningún historial para borrar.")
-
-# Puedes colocar esto al final de page_credit_request()
-with st.expander("⚙️ Zona de Peligro"):
-    st.warning("Esta acción eliminará permanentemente todos los registros del CSV.")
-    if st.button("🗑️ Borrar todo el historial"):
-        clear_history()
-
-def delete_id_from_csv(id_to_delete):
-    filename = 'historial_creditos.csv'
-    if os.path.exists(filename):
-        df = pd.read_csv(filename)
-        # Convertimos a int para asegurar la comparación
-        df = df[df['SK_ID_CURR'] != int(id_to_delete)]
-        df.to_csv(filename, index=False)
         return True
     return False
 
-# Interfaz para borrado selectivo
-id_borrar = st.text_input("ID a eliminar del historial")
-if st.button("Eliminar Registro"):
-    if delete_id_from_csv(id_borrar):
-        st.success(f"ID {id_borrar} eliminado.")
-    else:
-        st.error("No se encontró el archivo o el ID.")
-
+def render_history_section():
+    """Renderiza el historial y las opciones de borrado dentro de un expander"""
+    with st.expander("📊 Ver historial de solicitudes (CSV)"):
+        if os.path.exists('historial_creditos.csv'):
+            historial_df = pd.read_csv('historial_creditos.csv')
+            st.dataframe(historial_df, use_container_width=True)
+            
+            st.divider()
+            st.subheader("🛠️ Gestión de Registros")
+            
+            col_del1, col_del2 = st.columns([2, 1])
+            
+            with col_del1:
+                id_borrar = st.text_input("ID específico a eliminar", key="input_del_id")
+                if st.button("Eliminar Registro Individual", use_container_width=True):
+                    success, msg = delete_id_from_csv(id_borrar)
+                    if success:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+            
+            with col_del2:
+                st.write("Zona de Peligro")
+                if st.button("🗑️ Borrar TODO el historial", type="secondary", use_container_width=True):
+                    if clear_history():
+                        st.success("Historial eliminado.")
+                        st.rerun()
+                    else:
+                        st.error("No hay historial que borrar.")
+        else:
+            st.info("Aún no hay registros guardados en el historial local.")
 
 # ------------------------------------------------------
-# 4. ENRUTAMIENTO PRINCIPAL
+# VISTAS ACTUALIZADAS
+# ------------------------------------------------------
+
+def page_credit_request():
+    # Estilos CSS (se mantienen igual que tu código)
+    st.markdown("""<style>...</style>""", unsafe_allow_html=True)
+    
+    st.button("⬅️ Volver al Inicio", on_click=go_to_page, args=("home",))
+    st.markdown("<h1 style='font-size: 3rem;'>Solicitud de Crédito</h1>", unsafe_allow_html=True)
+
+    # --- NUEVA UBICACIÓN DEL HISTORIAL ---
+    # Se muestra aquí para que sea visible tanto en Individual como en Múltiple
+    render_history_section()
+    
+    st.divider()
+
+    tab1, tab2 = st.tabs(["👤 Individual", "👥 Múltiples Solicitantes"])
+
+    with tab1:
+        st.markdown("<h2 style='font-size: 1.8rem;'>Formulario Individual</h2>", unsafe_allow_html=True)
+        # ... (Resto del código del formulario individual)
+
+    with tab2:
+        st.markdown("<h2 style='font-size: 1.8rem;'>Carga Masiva de Solicitudes</h2>", unsafe_allow_html=True)
+        # ... (Resto del código de carga masiva)
+
+# ------------------------------------------------------
+# ENRUTAMIENTO PRINCIPAL (LIMPIO)
 # ------------------------------------------------------
 
 if 'page' not in st.session_state:
     st.session_state.page = "home"
 
+# Eliminamos el checkbox global que estaba fuera de las funciones
 if st.session_state.page == "home":
     page_home()
 elif st.session_state.page == "about":
     page_about()
 elif st.session_state.page == "request":
-    page_credit_request()
-elif st.session_state.page == "request":
-    page_credit_request()
     page_credit_request()
