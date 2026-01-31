@@ -47,19 +47,41 @@ model_final, datos_internos_df = load_resources()
 # ------------------------------------------------------
 
 def process_single_prediction(datos_solicitante, raw_input_data):
-    # ... (lógica de merge y preparación de X)
+    """
+    Procesa solicitud, predice y gestiona el guardado en CSV.
+    """
+    df_datos = pd.DataFrame([datos_solicitante])
     
-    # Realizar la predicción
+    # Merge con datos internos (Bureau)
+    datos_completos = df_datos.merge(datos_internos_df, on='SK_ID_CURR')
+    
+    if datos_completos.empty:
+        return None, "ID no encontrado en base interna (Bureau)"
+    
+    # Columnas del modelo (sin ID ni NAME)
+    columnas_modelo = list(model_final.feature_names_in_)
+
+    # Construir X asegurando compatibilidad total con el modelo
+    X = datos_completos.copy()
+
+    # Eliminar columnas que el modelo no usa
+    for col in ['SK_ID_CURR', 'NAME']:
+        if col in X.columns:
+            X = X.drop(col, axis=1)
+
+    # Añadir columnas faltantes
+    for col in columnas_modelo:
+        if col not in X.columns:
+            X[col] = 0
+
+    # Eliminar columnas extra y ordenar
+    X = X[columnas_modelo]
+
+    # Predicción
     prediction = model_final.predict(X)[0]
 
-    # GUARDADO: Aquí es donde se ejecuta la persistencia en el CSV
+    # Guardado en CSV
     saved_ok, saved_msg = save_to_csv(raw_input_data, datos_completos, prediction)
-    
-    # Opcional: Mostrar el mensaje de guardado en la consola de Streamlit
-    if saved_ok:
-        st.info(saved_msg)
-    else:
-        st.warning(saved_msg)
 
     return prediction, datos_completos
 
