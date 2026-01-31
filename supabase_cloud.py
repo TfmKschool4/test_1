@@ -489,8 +489,13 @@ def page_credit_request():
                 labels = [1, 2, 3, 4]
 
                 for index, row in edited_df.iterrows():
-                    try:
-                        # 1. Mapeos básicos y validación de edad
+                   try:
+                        # VALIDACIÓN CRÍTICA: Si el ID está vacío, saltar esta fila
+                        if pd.isna(row['SK_ID_CURR']) or row['SK_ID_CURR'] == "":
+                        results_log.append({"ID": "N/A", "Nombre": row.get('NAME', 'Desconocido'), "Resultado": "Error: ID faltante"})
+                        continue
+
+                        # 1. Mapeos básicos
                         age_val = row['AGE'] if pd.notnull(row['AGE']) else 18
                         age_bin = pd.cut([age_val], bins=bins, labels=labels, right=True, include_lowest=True).to_list()[0]
                         
