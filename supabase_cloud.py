@@ -909,4 +909,4 @@ if st.session_state.page == "home":
 elif st.session_state.page == "about":
     page_about()
 elif st.session_state.page == "request":
-    page_credit_request()page_credit_request()
+    page_credit_request()
