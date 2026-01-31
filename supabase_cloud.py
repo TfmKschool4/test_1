@@ -646,16 +646,18 @@ def page_credit_request():
         # ... (Resto del código de carga masiva)
 
 # ------------------------------------------------------
-# ENRUTAMIENTO PRINCIPAL (LIMPIO)
+# 4. ENRUTAMIENTO PRINCIPAL
 # ------------------------------------------------------
 
 if 'page' not in st.session_state:
     st.session_state.page = "home"
 
-# Eliminamos el checkbox global que estaba fuera de las funciones
 if st.session_state.page == "home":
     page_home()
 elif st.session_state.page == "about":
     page_about()
 elif st.session_state.page == "request":
+    page_credit_request()
+elif st.session_state.page == "request":
+    page_credit_request()
     page_credit_request()
