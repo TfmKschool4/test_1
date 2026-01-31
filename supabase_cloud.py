@@ -608,7 +608,6 @@ def render_history_section():
                         st.error(msg)
             
             with col_del2:
-                st.write("Zona de Peligro")
                 if st.button("🗑️ Borrar TODO el historial", type="secondary", use_container_width=True):
                     if clear_history():
                         st.success("Historial eliminado.")
